@@ -31,4 +31,11 @@ class Etalase extends BaseController
 
         return view('etalase/index', $data);
     }
+
+    public function caraKerja()
+    {
+        return view('pesan_antar/cara_kerja', [
+            'title' => 'Cara Kerja Pesan Antar — Siomay Dua Putri',
+        ]);
+    }
 }

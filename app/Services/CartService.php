@@ -58,18 +58,12 @@ class CartService
             return ['ok' => false, 'error' => 'Produk "' . $produk['nama'] . '" sedang tidak tersedia.' . $alasan];
         }
 
-        $isLumpia = ($produk['kategori'] ?? '') === 'Lumpia';
-        $varian   = null;
-        if ($isLumpia) {
-            if (! $varianId) {
-                return ['ok' => false, 'error' => 'Pilih varian (Frozen/Digoreng) untuk Lumpia terlebih dahulu.'];
-            }
+        $varian = null;
+        if ($varianId) {
             $varian = $varianModel->find((int) $varianId);
             if (! $varian || (int) $varian['produk_id'] !== $produkId) {
-                return ['ok' => false, 'error' => 'Varian tidak valid untuk produk ini.'];
+                $varianId = null;
             }
-        } else {
-            $varianId = null;
         }
 
         $jumlah = max(0.01, (float) $jumlah);
@@ -125,7 +119,7 @@ class CartService
                     continue;
                 }
             }
-            $harga = (float) $produk['harga'];
+            $harga = ($varian && ! empty($varian['harga'])) ? (float) $varian['harga'] : (float) $produk['harga'];
             $jumlah = (float) $line['jumlah'];
             $subtotal = $harga * $jumlah;
             $total += $subtotal;

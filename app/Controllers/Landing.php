@@ -29,16 +29,21 @@ class Landing extends BaseController
             }
         }
 
-        // Pesanan Acara (F21) belum dibangun, jadi link sengaja kosong.
-        // View akan render kartu sebagai "segera hadir" jika variabel ini null.
-        $pesananAcaraUrl = null;
+        $isLoggedIn = (bool) session()->get('pembeli_id');
+        $qrisUrl          = base_url('qris');
+        $pesanAntarUrl    = $isLoggedIn ? base_url('etalase') : base_url('daftar');
+        $pesanStandUrl    = $isLoggedIn ? base_url('pesan-stand/tentang') : base_url('daftar');
+        $pesanSekarangUrl = $isLoggedIn ? base_url('etalase') : base_url('daftar');
 
         $data = [
             'title'            => 'Siomay Dua Putri — Siomay Segar Setiap Hari',
             'footerDeskripsi'  => 'Siomay & bakso ikan segar, dibuat setiap hari dengan bahan berkualitas.',
             'kontakAlamat'     => $kontakAlamat,
             'kontakHp'         => $kontakHp,
-            'pesananAcaraUrl'  => $pesananAcaraUrl,
+            'qrisUrl'          => $qrisUrl,
+            'pesanAntarUrl'    => $pesanAntarUrl,
+            'pesanStandUrl'    => $pesanStandUrl,
+            'pesanSekarangUrl' => $pesanSekarangUrl,
         ];
 
         return view('landing/index', $data);

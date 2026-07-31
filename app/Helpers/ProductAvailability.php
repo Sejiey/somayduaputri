@@ -40,6 +40,6 @@ class ProductAvailability
     public static function isProductTersedia(array $produk, bool $tokoBuka): bool
     {
         $aktif = (int) ($produk['status_aktif'] ?? 0) === 1;
-        return $aktif && $tokoBuka;
+        return $aktif;
     }
 }

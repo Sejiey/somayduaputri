@@ -15,7 +15,10 @@ class CustomerAuthFilter implements FilterInterface
             return;
         }
 
-        return redirect()->to('/login')
+        $currentPath = uri_string();
+        $redirectParam = ! empty($currentPath) ? '?redirect=' . urlencode(ltrim($currentPath, '/')) : '';
+
+        return redirect()->to('/login' . $redirectParam)
             ->with('error', 'Silakan login atau daftar terlebih dahulu untuk melanjutkan.');
     }
 
