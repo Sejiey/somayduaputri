@@ -19,17 +19,7 @@
             <div class="flash-err"><p><?= esc(session()->getFlashdata('error')) ?></p></div>
         <?php endif; ?>
 
-        <div class="pembayaran-grid">
-            <div class="qris-card-box">
-                <img src="<?= esc($qrisImg) ?>" alt="QRIS Merchant" class="qris-img-stand">
-                <div class="timer-box">
-                    <span>Sisa Waktu Pembayaran: <strong id="countdown">15:00</strong></span>
-                </div>
-                <a href="<?= esc($qrisImg) ?>" download="QRIS_Stand_<?= esc($booking['kode_booking']) ?>.jpeg" class="btn-download">
-                    <span class="material-symbols-outlined">download</span> Unduh QRIS
-                </a>
-            </div>
-
+        <div class="pembayaran-grid" style="grid-template-columns: 1fr;">
             <div class="summary-card-box">
                 <h3>Detail Booking Stand</h3>
                 <p>Kode Booking: <strong><?= esc($booking['kode_booking']) ?></strong></p>
@@ -41,13 +31,10 @@
                     Total: Rp <?= number_format((float)$booking['total'], 0, ',', '.') ?>
                 </div>
 
-                <form action="<?= base_url('pesan-stand/konfirmasi/' . $booking['kode_booking']) ?>" method="post" style="margin-top: 20px;">
-                    <?= csrf_field() ?>
-                    <button type="submit" class="btn-konfirmasi">
-                        <span class="material-symbols-outlined">check_circle</span>
-                        Saya Sudah Bayar
-                    </button>
-                </form>
+                <button id="btn-bayar-snap" class="btn-konfirmasi" style="margin-top: 20px;">
+                    <span class="material-symbols-outlined">payment</span>
+                    Bayar Sekarang
+                </button>
             </div>
         </div>
     </div>
@@ -74,20 +61,24 @@
     .btn-konfirmasi:hover { background: #047857; }
 </style>
 
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="<?= esc($clientKey) ?>"></script>
 <script>
-    var duration = 15 * 60;
-    var timerDisplay = document.getElementById('countdown');
-    var interval = setInterval(function() {
-        var minutes = parseInt(duration / 60, 10);
-        var seconds = parseInt(duration % 60, 10);
-        minutes = minutes < 10 ? "0" + minutes : minutes;
-        seconds = seconds < 10 ? "0" + seconds : seconds;
-        timerDisplay.textContent = minutes + ":" + seconds;
-        if (--duration < 0) {
-            clearInterval(interval);
-            timerDisplay.textContent = "KEDALUWARSA";
+document.getElementById('btn-bayar-snap').addEventListener('click', function () {
+    snap.pay('<?= esc($snapToken) ?>', {
+        onSuccess: function (result) {
+            window.location.href = '<?= base_url('pesan-stand/berhasil/' . $booking['kode_booking']) ?>';
+        },
+        onPending: function (result) {
+            window.location.href = '<?= base_url('pesan-stand/berhasil/' . $booking['kode_booking']) ?>';
+        },
+        onError: function (result) {
+            alert('Pembayaran gagal, silakan coba lagi.');
+        },
+        onClose: function () {
+            alert('Anda menutup popup sebelum menyelesaikan pembayaran. Klik tombol Bayar Sekarang untuk mencoba lagi.');
         }
-    }, 1000);
+    });
+});
 </script>
 
 <?= $this->include('partials/footer') ?>

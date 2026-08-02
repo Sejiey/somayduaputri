@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Midtrans\Config;
 use Midtrans\CoreApi;
+use Midtrans\Snap;
 use Midtrans\Transaction;
 
 class MidtransService
@@ -100,6 +101,51 @@ class MidtransService
 
         return ['ok' => true, 'data' => $data];
     }
+
+    /**
+     * Generate Snap token untuk satu transaksi (popup Snap.js di sisi client).
+     *
+     * @param string $orderId          ID unik (pakai generateOrderId())
+     * @param int    $grossAmount      Total tagihan, integer Rupiah tanpa desimal
+     * @param array  $itemDetails      Format Midtrans: [['id'=>..,'price'=>..,'quantity'=>..,'name'=>..], ...]
+     * @param array  $customerDetails  Format Midtrans: ['first_name'=>..,'phone'=>..]
+     *
+     * @return array ['ok'=>bool, 'token'=>string|null, 'error'=>string|null]
+     */
+    public static function createSnapToken(
+        string $orderId,
+        int $grossAmount,
+        array $itemDetails = [],
+        array $customerDetails = []
+    ): array {
+        self::configure();
+
+        $params = [
+            'transaction_details' => [
+                'order_id'     => $orderId,
+                'gross_amount' => $grossAmount,
+            ],
+        ];
+
+        if (! empty($itemDetails)) {
+            $params['item_details'] = $itemDetails;
+        }
+        if (! empty($customerDetails)) {
+            $params['customer_details'] = $customerDetails;
+        }
+
+        try {
+            $token = Snap::getSnapToken($params);
+        } catch (\Exception $e) {
+            return ['ok' => false, 'token' => null, 'error' => 'Gagal generate Snap token: ' . $e->getMessage()];
+        }
+
+        return ['ok' => true, 'token' => $token, 'error' => null];
+    }
+
+    /**
+     * Cek status transaksi ke Midtrans.
+
 
     /**
      * Cek status transaksi ke Midtrans.

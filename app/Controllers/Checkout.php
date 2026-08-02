@@ -9,9 +9,30 @@ use App\Models\PengaturanModel;
 use App\Models\ProdukModel;
 use App\Models\VarianProdukModel;
 use App\Services\CartService;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class Checkout extends BaseController
 {
+    public function __construct()
+    {
+        // Konfigurasi Midtrans SDK
+        // Mendukung format 'midtrans.serverKey' maupun 'MIDTRANS_SERVER_KEY' di file .env
+        $serverKey = env('midtrans.serverKey') 
+                  ?? env('MIDTRANS_SERVER_KEY') 
+                  ?? 'YOUR_SERVER_KEY';
+
+        $isProduction = env('midtrans.isProduction') 
+                     ?? env('MIDTRANS_IS_PRODUCTION') 
+                     ?? false;
+
+        // trim() untuk menghapus spasi tak sengaja saat copy-paste dari Midtrans
+        Config::$serverKey    = trim((string) $serverKey);
+        Config::$isProduction = filter_var($isProduction, FILTER_VALIDATE_BOOLEAN);
+        Config::$isSanitized  = true;
+        Config::$is3ds        = true;
+    }
+
     private function guardCart(int $pembeliId = 0)
     {
         if (! $pembeliId) {
@@ -21,29 +42,35 @@ class Checkout extends BaseController
             return redirect()->to('/login')
                 ->with('error', 'Sesi login berakhir. Silakan login lagi.');
         }
+
         $produkModel     = new ProdukModel();
         $varianModel     = new VarianProdukModel();
         $pengaturanModel = new PengaturanModel();
+
         $cartView = CartService::hydrate($produkModel, $varianModel, $pengaturanModel);
         if (empty($cartView['rows']) || ! $cartView['canCheckout']) {
             return redirect()->to('/pesan-antar/form')
                 ->with('error', 'Keranjang kosong atau minimum order (Rp100.000) belum terpenuhi.');
         }
+
         $pengaturan = $pengaturanModel->getSingleton();
-        $now = date('H:i:s');
-        $avail = ProductAvailability::resolve(
+        $now        = date('H:i:s');
+        $avail      = ProductAvailability::resolve(
             $pengaturan['jam_buka'] ?? null,
             $pengaturan['jam_tutup'] ?? null,
             $now
         );
-        $tokoBuka = $avail['tokoBuka'];
+
+        $tokoBuka    = $avail['tokoBuka'];
         $unavailable = [];
+
         foreach ($cartView['rows'] as $row) {
             if (! ProductAvailability::isProductTersedia($row['produk'], $tokoBuka)) {
-                $unavailable[] = $row['produk']['nama']
-                    . (! empty($row['varian']) ? ' (varian: ' . $row['varian']['nama_varian'] . ')' : '');
+                $namaVarian    = ! empty($row['varian']['nama_varian']) ? ' (varian: ' . $row['varian']['nama_varian'] . ')' : '';
+                $unavailable[] = $row['produk']['nama'] . $namaVarian;
             }
         }
+
         if (! empty($unavailable)) {
             $reason = $tokoBuka
                 ? 'Produk berikut sudah tidak aktif dan tidak bisa dipesan: '
@@ -51,12 +78,13 @@ class Checkout extends BaseController
             return redirect()->to('/pesan-antar/form')
                 ->with('error', $reason . implode(', ', $unavailable));
         }
+
         return $cartView;
     }
 
     private function computeTotals(array $cartView, array $pengaturan): array
     {
-        $subtotal = (float) $cartView['total'];
+        $subtotal = (float) ($cartView['total'] ?? 0);
         return [
             'subtotal'    => $subtotal,
             'pajak'       => 0.0,
@@ -67,7 +95,7 @@ class Checkout extends BaseController
     }
 
     // ====================================================================
-    // ALUR PESAN ANTAR — Step 2: Form Pesanan (Tanggal + Menu + Catatan + Metode)
+    // Step 2: Form Pesanan
     // ====================================================================
     public function form()
     {
@@ -76,7 +104,7 @@ class Checkout extends BaseController
             return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu untuk melakukan pesanan.');
         }
 
-        $db = \Config\Database::connect();
+        $db         = \Config\Database::connect();
         $produkList = $db->table('produk')
             ->whereIn('id', [1, 2, 4, 7, 8, 9])
             ->where('status_aktif', 1)
@@ -89,17 +117,19 @@ class Checkout extends BaseController
                 ->get()->getResultArray();
         }
 
-        $cart = CartService::get();
+        $cart      = CartService::get();
         $cartItems = [];
-        foreach ($cart as $key => $line) {
-            $cartItems[$line['produk_id']] = $line;
+        foreach ($cart as $line) {
+            if (isset($line['produk_id'])) {
+                $cartItems[$line['produk_id']] = $line;
+            }
         }
 
         $oldItems = old('items');
         if (is_array($oldItems) && ! empty($oldItems)) {
             foreach ($oldItems as $pId => $itemData) {
-                $qty = (float) ($itemData['qty'] ?? 0);
-                $vId = ! empty($itemData['varian_id']) ? (int) $itemData['varian_id'] : null;
+                $qty                   = (float) ($itemData['qty'] ?? 0);
+                $vId                   = ! empty($itemData['varian_id']) ? (int) $itemData['varian_id'] : null;
                 $cartItems[(int) $pId] = [
                     'produk_id' => (int) $pId,
                     'varian_id' => $vId,
@@ -142,19 +172,19 @@ class Checkout extends BaseController
         }
 
         $catatan = trim((string) $this->request->getPost('catatan'));
-        if (strlen($catatan) > 250) {
+        if (mb_strlen($catatan) > 250) {
             return redirect()->back()->withInput()->with('error', 'Catatan maksimal 250 karakter.');
         }
 
-        $rawItems = (array) $this->request->getPost('items');
-        $produkModel = new ProdukModel();
-        $varianModel = new VarianProdukModel();
+        $rawItems        = (array) $this->request->getPost('items');
+        $produkModel     = new ProdukModel();
+        $varianModel     = new VarianProdukModel();
         $pengaturanModel = new PengaturanModel();
 
         CartService::clear();
 
         foreach ($rawItems as $produkId => $itemData) {
-            $qty = (float) ($itemData['qty'] ?? 0);
+            $qty      = (float) ($itemData['qty'] ?? 0);
             $varianId = ! empty($itemData['varian_id']) ? (int) $itemData['varian_id'] : null;
             if ($qty > 0) {
                 CartService::add((int) $produkId, $varianId, $qty, $produkModel, $varianModel);
@@ -163,7 +193,7 @@ class Checkout extends BaseController
 
         $cartView = CartService::hydrate($produkModel, $varianModel, $pengaturanModel);
         if (empty($cartView['rows']) || ! $cartView['canCheckout']) {
-            return redirect()->back()->withInput()->with('error', 'Keranjang kosong atau minimum order (Rp100.000) belum terpenuhi. Subtotal saat ini: Rp' . number_format($cartView['total'], 0, ',', '.'));
+            return redirect()->back()->withInput()->with('error', 'Keranjang kosong atau minimum order (Rp100.000) belum terpenuhi. Subtotal saat ini: Rp' . number_format($cartView['total'] ?? 0, 0, ',', '.'));
         }
 
         session()->set('checkout_tanggal', $tanggal);
@@ -173,31 +203,13 @@ class Checkout extends BaseController
         session()->set('checkout_catatan', $catatan);
         session()->set('catatan_pesanan', $catatan);
 
-        $cartItemsSession = [];
-        foreach ($cartView['rows'] as $r) {
-            $cartItemsSession[] = [
-                'produk_id'   => $r['produk']['id'],
-                'nama'        => $r['produk']['nama'],
-                'varian_id'   => ! empty($r['varian']) ? $r['varian']['id'] : null,
-                'varian_nama' => ! empty($r['varian']) ? $r['varian']['nama_varian'] : '',
-                'harga'       => $r['harga'],
-                'jumlah'      => $r['jumlah'],
-                'subtotal'    => $r['subtotal'],
-            ];
-        }
-        session()->set('temp_order', [
-            'tanggal' => $tanggal,
-            'metode'  => $metode,
-            'catatan' => $catatan,
-        ]);
-
         return redirect()->to('/pesan-antar/data-pemesan');
     }
 
     public function dataPemesan()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
@@ -208,16 +220,16 @@ class Checkout extends BaseController
     public function saveDataPemesan()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
 
-        $nama = trim((string) $this->request->getPost('nama'));
-        $wa = trim((string) $this->request->getPost('wa'));
+        $nama   = trim((string) $this->request->getPost('nama'));
+        $wa     = trim((string) $this->request->getPost('wa'));
         $alamat = trim((string) $this->request->getPost('alamat'));
-        $lat = trim((string) $this->request->getPost('koordinat_lat'));
-        $lng = trim((string) $this->request->getPost('koordinat_lng'));
+        $lat    = trim((string) $this->request->getPost('koordinat_lat'));
+        $lng    = trim((string) $this->request->getPost('koordinat_lng'));
 
         session()->set('temp_biodata', [
             'nama'          => $nama,
@@ -242,14 +254,14 @@ class Checkout extends BaseController
     public function ringkasan()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
 
         $pengaturanModel = new PengaturanModel();
-        $pengaturan = $pengaturanModel->getSingleton();
-        $totals = $this->computeTotals($cartView, $pengaturan);
+        $pengaturan      = $pengaturanModel->getSingleton();
+        $totals          = $this->computeTotals($cartView, $pengaturan);
 
         $sessionData = [
             'tanggal_dibutuhkan' => session('checkout_tanggal') ?? session('tanggal_dibutuhkan') ?? '',
@@ -259,29 +271,29 @@ class Checkout extends BaseController
 
         $cartItems = [];
         foreach ($cartView['rows'] as $r) {
-            $img_name = 'menu_1.png';
-            $namaLower = strtolower($r['produk']['nama']);
-            if (strpos($namaLower, 'lumpia') !== false) {
+            $img_name  = 'menu_1.png';
+            $namaLower = strtolower($r['produk']['nama'] ?? '');
+            if (str_contains($namaLower, 'lumpia')) {
                 $img_name = 'menu_2.jpeg';
-            } elseif (strpos($namaLower, 'siomay') !== false || strpos($namaLower, 'somay') !== false) {
+            } elseif (str_contains($namaLower, 'siomay') || str_contains($namaLower, 'somay')) {
                 $img_name = 'somay.png';
-            } elseif (strpos($namaLower, 'tahu') !== false) {
+            } elseif (str_contains($namaLower, 'tahu')) {
                 $img_name = 'tahu.png';
             }
 
             $cartItems[] = [
-                'nama'        => $r['produk']['nama'],
+                'nama'        => $r['produk']['nama'] ?? '',
                 'nama_varian' => ! empty($r['varian']['nama_varian']) ? $r['varian']['nama_varian'] : ($r['produk']['satuan'] ?? 'Porsi'),
-                'harga'       => (float) $r['harga'],
-                'jumlah'      => (float) $r['jumlah'],
-                'subtotal'    => (float) $r['subtotal'],
+                'harga'       => (float) ($r['harga'] ?? 0),
+                'jumlah'      => (float) ($r['jumlah'] ?? 0),
+                'subtotal'    => (float) ($r['subtotal'] ?? 0),
                 'gambar'      => $img_name,
             ];
         }
 
-        $metodeVal = $sessionData['metode'] ?? session('checkout_metode') ?? 'ambil_sendiri';
-        $ongkirVal = $metodeVal === 'diantar' ? 10000.0 : 0.0;
-        $subtotalVal = (float) ($totals['subtotal'] ?? $cartView['total']);
+        $metodeVal     = $sessionData['metode'] ?? session('checkout_metode') ?? 'ambil_sendiri';
+        $ongkirVal     = $metodeVal === 'diantar' ? 10000.0 : 0.0;
+        $subtotalVal   = (float) ($totals['subtotal'] ?? $cartView['total']);
         $totalAkhirVal = $subtotalVal + $ongkirVal;
 
         $data = [
@@ -307,22 +319,21 @@ class Checkout extends BaseController
     public function prosesCheckoutCombined()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
 
-        $metode = (string) (session('checkout_metode') ?? 'ambil_sendiri');
-
-        $nama = trim((string) ($this->request->getPost('nama_pemesan') ?? $this->request->getPost('nama') ?? ''));
-        $nomorHp = trim((string) ($this->request->getPost('no_wa') ?? $this->request->getPost('nomor_hp') ?? ''));
+        $metode  = (string) (session('checkout_metode') ?? 'ambil_sendiri');
+        $nama    = trim((string) ($this->request->getPost('nama_pemesan') ?? $this->request->getPost('nama') ?? session('checkout_nama') ?? ''));
+        $nomorHp = trim((string) ($this->request->getPost('no_wa') ?? $this->request->getPost('nomor_hp') ?? session('checkout_nomor_hp') ?? ''));
 
         if ($nama === '' || $nomorHp === '') {
             return redirect()->back()->withInput()->with('error', 'Nama dan No. WhatsApp wajib diisi.');
         }
 
         if ($metode === 'diantar') {
-            $alamat = trim((string) ($this->request->getPost('alamat_lengkap') ?? $this->request->getPost('alamat') ?? ''));
+            $alamat = trim((string) ($this->request->getPost('alamat_lengkap') ?? $this->request->getPost('alamat') ?? session('checkout_alamat') ?? ''));
             if ($alamat === '') {
                 return redirect()->back()->withInput()->with('error', 'Alamat lengkap wajib diisi untuk metode pengantaran.');
             }
@@ -348,12 +359,12 @@ class Checkout extends BaseController
     }
 
     // ====================================================================
-    // Step 4A: Data Pemesan — Ambil Sendiri
+    // Step 4A & 4B: Data Pemesan
     // ====================================================================
     public function dataAmbilSendiri()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
@@ -379,7 +390,7 @@ class Checkout extends BaseController
     public function saveDataAmbilSendiri()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
@@ -392,8 +403,8 @@ class Checkout extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $nama = trim((string) $this->request->getPost('nama'));
-        $nomorHp = trim((string) $this->request->getPost('nomor_hp'));
+        $nama           = trim((string) $this->request->getPost('nama'));
+        $nomorHp        = trim((string) $this->request->getPost('nomor_hp'));
         $catatanPemesan = trim((string) $this->request->getPost('catatan_pemesan'));
 
         session()->set('checkout_nama', $nama);
@@ -405,13 +416,10 @@ class Checkout extends BaseController
         return $this->createOrderFromCart('ambil_sendiri', $nama, $nomorHp, null);
     }
 
-    // ====================================================================
-    // Step 4B: Data Pemesan — Diantar via Maxim
-    // ====================================================================
     public function dataDiantar()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
@@ -437,7 +445,7 @@ class Checkout extends BaseController
     public function saveDataDiantar()
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
@@ -451,9 +459,9 @@ class Checkout extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $nama = trim((string) $this->request->getPost('nama'));
-        $nomorHp = trim((string) $this->request->getPost('nomor_hp'));
-        $alamat = trim((string) $this->request->getPost('alamat'));
+        $nama         = trim((string) $this->request->getPost('nama'));
+        $nomorHp      = trim((string) $this->request->getPost('nomor_hp'));
+        $alamat       = trim((string) $this->request->getPost('alamat'));
         $catatanKurir = trim((string) $this->request->getPost('catatan_kurir'));
 
         session()->set('checkout_nama', $nama);
@@ -467,26 +475,67 @@ class Checkout extends BaseController
     }
 
     // ====================================================================
-    // Create Record pesanan + item_pesanan (Step 5)
+    // Step 5: Buat Pesanan & Generasi Token Midtrans Snap
     // ====================================================================
     private function createOrderFromCart(string $metode, string $nama, string $nomorHp, ?string $alamat = null)
     {
         $pembeliId = (int) session()->get('pembeli_id');
-        $cartView = $this->guardCart($pembeliId);
+        $cartView  = $this->guardCart($pembeliId);
         if ($cartView instanceof \CodeIgniter\HTTP\RedirectResponse) {
             return $cartView;
         }
 
         $pengaturanModel = new PengaturanModel();
-        $pengaturan = $pengaturanModel->getSingleton();
-        $totals = $this->computeTotals($cartView, $pengaturan);
+        $pengaturan      = $pengaturanModel->getSingleton();
+        $totals          = $this->computeTotals($cartView, $pengaturan);
 
-        $ongkir = $metode === 'diantar' ? 10000.0 : 0.0;
+        $ongkir     = $metode === 'diantar' ? 10000.0 : 0.0;
         $totalAkhir = $totals['total'] + $ongkir;
 
-        $kodePesanan = 'SDP' . date('Ymd') . sprintf('%04d', rand(1, 9999));
-        $catatan = (string) (session('checkout_catatan') ?? '');
+        $kodePesanan       = 'SDP' . date('Ymd') . sprintf('%04d', rand(1, 9999));
+        $catatan           = (string) (session('checkout_catatan') ?? '');
         $tanggalDibutuhkan = (string) (session('checkout_tanggal') ?? (new \DateTime('tomorrow'))->format('Y-m-d'));
+
+        $itemDetails = [];
+        foreach ($cartView['rows'] as $row) {
+            $namaProduk    = $row['produk']['nama'] ?? 'Produk';
+            $namaVarian    = ! empty($row['varian']['nama_varian']) ? ' - ' . $row['varian']['nama_varian'] : '';
+            $namaFormatted = mb_substr($namaProduk . $namaVarian, 0, 50);
+
+            $itemDetails[] = [
+                'id'       => (string) ($row['produk']['id'] ?? rand(100, 999)),
+                'price'    => (int) round($row['harga']),
+                'quantity' => (int) round($row['jumlah']),
+                'name'     => $namaFormatted,
+            ];
+        }
+
+        if ($ongkir > 0) {
+            $itemDetails[] = [
+                'id'       => 'ONGKIR',
+                'price'    => (int) round($ongkir),
+                'quantity' => 1,
+                'name'     => 'Biaya Pengiriman',
+            ];
+        }
+
+        $snapParams = [
+            'transaction_details' => [
+                'order_id'     => $kodePesanan,
+                'gross_amount' => (int) round($totalAkhir),
+            ],
+            'customer_details' => [
+                'first_name' => $nama,
+                'phone'      => $nomorHp,
+            ],
+            'item_details' => $itemDetails,
+        ];
+
+        try {
+            $snapToken = Snap::getSnapToken($snapParams);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal terhubung ke Midtrans: ' . $e->getMessage());
+        }
 
         $db = \Config\Database::connect();
         $db->transStart();
@@ -500,10 +549,11 @@ class Checkout extends BaseController
             'alamat'             => $alamat,
             'catatan'            => $catatan !== '' ? $catatan : null,
             'tanggal_dibutuhkan' => $tanggalDibutuhkan,
-            'subtotal'           => $totals['subtotal'],
-            'pajak'              => $totals['pajak'],
-            'total'              => $totalAkhir,
-            'status'             => 'menunggu_konfirmasi',
+            'subtotal'           => (float) $totals['subtotal'],
+            'pajak'              => (float) $totals['pajak'],
+            'total'              => (float) $totalAkhir,
+            'snap_token'         => $snapToken,
+            'status'             => 'menunggu_pembayaran',
         ];
 
         $db->table('pesanan')->insert($pesananData);
@@ -513,7 +563,7 @@ class Checkout extends BaseController
             $itemData = [
                 'pesanan_id'    => $pesananId,
                 'produk_id'     => (int) $row['produk']['id'],
-                'varian_id'     => ! empty($row['varian']) ? (int) $row['varian']['id'] : null,
+                'varian_id'     => ! empty($row['varian']['id']) ? (int) $row['varian']['id'] : null,
                 'jumlah'        => (float) $row['jumlah'],
                 'harga_satuan'  => (float) $row['harga'],
                 'subtotal_item' => (float) $row['subtotal'],
@@ -524,7 +574,7 @@ class Checkout extends BaseController
         $db->transComplete();
 
         if ($db->transStatus() === false) {
-            return redirect()->back()->with('error', 'Gagal membuat pesanan. Silakan coba lagi.');
+            return redirect()->back()->with('error', 'Gagal menyimpan pesanan ke database. Silakan coba lagi.');
         }
 
         CartService::clear();
@@ -545,7 +595,7 @@ class Checkout extends BaseController
     }
 
     // ====================================================================
-    // Step 6: Pembayaran QRIS
+    // Step 6: Pembayaran Midtrans Snap
     // ====================================================================
     public function pembayaran(?string $kode = null)
     {
@@ -559,7 +609,7 @@ class Checkout extends BaseController
             return redirect()->to('/pesan-antar/form')->with('error', 'Kode pesanan tidak valid.');
         }
 
-        $db = \Config\Database::connect();
+        $db      = \Config\Database::connect();
         $pesanan = $db->table('pesanan')
             ->where('kode_pesanan', $kodePesanan)
             ->where('pembeli_id', $pembeliId)
@@ -576,10 +626,16 @@ class Checkout extends BaseController
             ->where('ip.pesanan_id', (int) $pesanan['id'])
             ->get()->getResultArray();
 
+        $clientKey = env('midtrans.clientKey') 
+                  ?? env('MIDTRANS_CLIENT_KEY') 
+                  ?? 'YOUR_CLIENT_KEY';
+
         return view('pesan_antar/pembayaran', [
-            'title'   => 'Pembayaran QRIS — Pesan Antar',
-            'pesanan' => $pesanan,
-            'items'   => $items,
+            'title'     => 'Pembayaran Midtrans — Pesan Antar',
+            'pesanan'   => $pesanan,
+            'items'     => $items,
+            'snapToken' => $pesanan['snap_token'] ?? '',
+            'clientKey' => trim((string) $clientKey),
         ]);
     }
 
@@ -592,7 +648,7 @@ class Checkout extends BaseController
 
         $kodePesanan = $kode ?? (string) $this->request->getGet('kode');
 
-        $db = \Config\Database::connect();
+        $db      = \Config\Database::connect();
         $pesanan = $db->table('pesanan')
             ->where('kode_pesanan', $kodePesanan)
             ->where('pembeli_id', $pembeliId)
@@ -618,7 +674,7 @@ class Checkout extends BaseController
             return redirect()->to('/login')->with('error', 'Silakan login untuk melihat pesanan Anda.');
         }
 
-        $db = \Config\Database::connect();
+        $db      = \Config\Database::connect();
         $pesanan = $db->table('pesanan')
             ->where('kode_pesanan', $kode)
             ->where('pembeli_id', $pembeliId)
@@ -629,7 +685,7 @@ class Checkout extends BaseController
         }
 
         $pengaturan = (new PengaturanModel())->getSingleton();
-        $adminHp = (string) ($pengaturan['admin_hp'] ?? '');
+        $adminHp    = (string) ($pengaturan['admin_hp'] ?? '');
         if ($adminHp === '') {
             $admin = (new AdminModel())->first();
             if ($admin && ! empty($admin['nomor_hp'])) {
@@ -643,7 +699,7 @@ class Checkout extends BaseController
         }
 
         $waText = "Halo%20penjual,%20saya%20sudah%20melakukan%20pesanan%20antar%20dengan%20kode%20pesanan%20*" . $kode . "*%20sebesar%20Rp" . number_format((float)$pesanan['total'], 0, ',', '.') . ".%20Mohon%20di-cek.";
-        $waUrl = $waNum !== '' ? "https://wa.me/" . $waNum . "?text=" . $waText : "#";
+        $waUrl  = $waNum !== '' ? "https://wa.me/" . $waNum . "?text=" . $waText : "#";
 
         return view('pesan_antar/berhasil', [
             'title'   => 'Pesanan Berhasil — Siomay Dua Putri',

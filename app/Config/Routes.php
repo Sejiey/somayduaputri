@@ -40,14 +40,13 @@ $routes->group('pesan-antar', ['filter' => 'customerAuth'], static function ($ro
     $routes->get('ringkasan',                 'Checkout::ringkasan');
     $routes->post('checkout',                 'Checkout::prosesCheckoutCombined');
     $routes->post('proses-checkout',          'Checkout::prosesCheckoutCombined');
-    $routes->post('proses-qris',                'Checkout::prosesCheckoutCombined');
+    $routes->post('proses-qris',              'Checkout::prosesCheckoutCombined');
     $routes->get('data-ambil-sendiri',        'Checkout::dataAmbilSendiri');
     $routes->post('data-ambil-sendiri',       'Checkout::saveDataAmbilSendiri');
     $routes->get('data-diantar',              'Checkout::dataDiantar');
     $routes->post('data-diantar',             'Checkout::saveDataDiantar');
     $routes->get('pembayaran/(:segment)',     'Checkout::pembayaran/$1');
-    $routes->post('konfirmasi/(:segment)',    'Checkout::konfirmasiBayar/$1');
-    $routes->get('konfirmasi/(:segment)',     'Checkout::konfirmasiBayar/$1');
+    $routes->get('konfirmasi-bayar/(:segment)', 'Checkout::konfirmasiBayar/$1'); // <-- Rute Baru
     $routes->get('berhasil/(:segment)',       'Checkout::berhasil/$1');
 });
 
@@ -64,7 +63,6 @@ $routes->group('checkout', ['filter' => 'customerAuth'], static function ($route
     $routes->get('antar',             'Checkout::antar');
     $routes->post('antar',            'Checkout::saveAntar');
     $routes->get('pembayaran',        'Checkout::pembayaran');
-    $routes->get('konfirmasi-bayar/(:segment)', 'Checkout::konfirmasiBayar/$1');
     $routes->get('sukses/(:segment)', 'Checkout::sukses/$1');
 });
 
@@ -81,7 +79,6 @@ $routes->group('pesan-stand', ['filter' => 'customerAuth'], static function ($ro
     $routes->get('ringkasan',                 'PesanStand::ringkasan');
     $routes->post('simpan',                   'PesanStand::simpanBooking');
     $routes->get('pembayaran/(:segment)',     'PesanStand::pembayaran/$1');
-    $routes->post('konfirmasi/(:segment)',    'PesanStand::konfirmasiBayar/$1');
     $routes->get('berhasil/(:segment)',       'PesanStand::berhasil/$1');
 });
 

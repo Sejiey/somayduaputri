@@ -12,6 +12,29 @@ use App\Models\ProdukModel;
 class PesanStand extends BaseController
 {
     // ====================================================================
+    // CATALOG METHOD
+    // ====================================================================
+    private function getStandCatalog(): array
+    {
+        return [
+            'siomay_kukus'       => ['produk_id' => 5,  'nama' => 'Siomay Kukus',          'varian' => ['1kg' => 80000, '2kg' => 160000, '3kg' => 240000, '5kg' => 400000]],
+            'tahu_kukus'         => ['produk_id' => 6,  'nama' => 'Tahu Kukus Sayur',       'varian' => ['1kg' => 80000, '2kg' => 160000, '3kg' => 240000, '5kg' => 400000]],
+            'siomay_keju'        => ['produk_id' => 7,  'nama' => 'Siomay Keju',            'varian' => ['paket_50' => 100000, 'paket_100' => 200000]],
+            'siomay_telur'       => ['produk_id' => 8,  'nama' => 'Siomay Isi Telur',       'varian' => ['paket_50' => 100000, 'paket_100' => 200000]],
+            'siomay_urat'        => ['produk_id' => 9,  'nama' => 'Siomay Urat',            'varian' => ['paket_50' => 100000, 'paket_100' => 200000]],
+            'siomay_jumbo'       => ['produk_id' => 10, 'nama' => 'Siomay Jumbo',           'fixed_harga' => 6000],
+            'pentol_goreng'      => ['produk_id' => 11, 'nama' => 'Pentol Goreng',          'varian' => ['setengah_kg' => 25000, 'satu_kg' => 50000]],
+            'lumpia'             => ['produk_id' => 16, 'nama' => 'Lumpia Isi Ayam+Sayur',  'varian' => ['paket_25' => 50000, 'paket_50' => 100000, 'paket_100' => 200000]],
+            'nugget_ayam'        => ['produk_id' => 12, 'nama' => 'Nugget Ayam',            'varian' => ['setengah_kg' => 25000, 'satu_kg' => 50000]],
+            'sosis'              => ['produk_id' => 13, 'nama' => 'Sosis',                  'varian' => ['setengah_kg' => 25000, 'satu_kg' => 50000]],
+            'siomay_ikan_goreng' => ['produk_id' => 14, 'nama' => 'Siomay Ikan Goreng',     'varian' => ['setengah_kg' => 25000, 'satu_kg' => 50000]],
+            'batagor'            => ['produk_id' => 15, 'nama' => 'Batagor',                'varian' => ['setengah_kg' => 25000, 'satu_kg' => 50000]],
+            'mie_gelas'          => ['produk_id' => 17, 'nama' => 'Mie Gelas',              'varian' => ['renceng_1' => 30000, 'renceng_2' => 60000]],
+            'es_jeruk_cup'       => ['produk_id' => 18, 'nama' => 'Es Jeruk Cup Kecil',     'varian' => ['pack_1' => 100000, 'pack_2' => 200000]],
+        ];
+    }
+
+    // ====================================================================
     // STEP 1: Tentang Stand Acara
     // ====================================================================
     public function tentang()
@@ -66,11 +89,11 @@ class PesanStand extends BaseController
         $jenisRaw    = (string) ($this->request->getPost('jenis_acara') ?? 'Lainnya');
         
         $jenisMap = [
-            'Pernikahan'      => 'pernikahan',
-            'Ulang Tahun'     => 'ulang_tahun',
-            'Arisan'          => 'arisan',
-            'Perusahaan'      => 'acara_perusahaan',
-            'Lainnya'         => 'lainnya',
+            'Pernikahan'       => 'pernikahan',
+            'Ulang Tahun'      => 'ulang_tahun',
+            'Arisan'           => 'arisan',
+            'Perusahaan'       => 'acara_perusahaan',
+            'Lainnya'          => 'lainnya',
             'ulang_tahun'      => 'ulang_tahun',
             'pernikahan'       => 'pernikahan',
             'acara_perusahaan' => 'acara_perusahaan',
@@ -157,31 +180,39 @@ class PesanStand extends BaseController
             return redirect()->to('/pesan-stand/acara')->with('error', 'Silakan isi data acara terlebih dahulu.');
         }
 
+        $catalog = $this->getStandCatalog();
         $rawItems = (array) $this->request->getPost('items');
         $selectedItems = [];
 
         foreach ($rawItems as $key => $itemData) {
-            if (is_array($itemData)) {
-                $qtyVal = (float) ($itemData['qty'] ?? 0);
-                $varianId = ! empty($itemData['varian']) ? (int) $itemData['varian'] : (! empty($itemData['varian_id']) ? (int) $itemData['varian_id'] : null);
-                $produkId = is_numeric($key) ? (int) $key : (! empty($itemData['produk_id']) ? (int) $itemData['produk_id'] : (int) $key);
-                if ($qtyVal > 0) {
-                    $selectedItems[$key] = [
-                        'produk_id' => $produkId,
-                        'qty'       => $qtyVal,
-                        'varian_id' => $varianId,
-                    ];
-                }
-            } else {
-                $qtyVal = (float) $itemData;
-                if ($qtyVal > 0) {
-                    $selectedItems[(int) $key] = [
-                        'produk_id' => (int) $key,
-                        'qty'       => $qtyVal,
-                        'varian_id' => null,
-                    ];
-                }
+            if (! isset($catalog[$key]) || ! is_array($itemData)) {
+                continue;
             }
+            $item = $catalog[$key];
+            $qty = (float) ($itemData['qty'] ?? 0);
+            if ($qty <= 0) {
+                continue;
+            }
+
+            if (isset($item['fixed_harga'])) {
+                $harga = (float) $item['fixed_harga'];
+                $varianNama = '';
+            } else {
+                $varianKey = (string) ($itemData['varian_id'] ?? '');
+                if ($varianKey === '' || ! isset($item['varian'][$varianKey])) {
+                    continue;
+                }
+                $harga = (float) $item['varian'][$varianKey];
+                $varianNama = $varianKey;
+            }
+
+            $selectedItems[$key] = [
+                'produk_id'   => $item['produk_id'],
+                'nama'        => $item['nama'],
+                'qty'         => $qty,
+                'harga'       => $harga,
+                'varian_nama' => $varianNama,
+            ];
         }
 
         if (empty($selectedItems)) {
@@ -208,45 +239,19 @@ class PesanStand extends BaseController
         $pengaturan = (new PengaturanModel())->getSingleton();
         $biayaStand = (float) ($pengaturan['biaya_stand'] ?? 0.0);
 
-        $db = \Config\Database::connect();
         $itemsDetail = [];
         $subtotal = 0.0;
 
-        foreach ($selectedItems as $key => $itemData) {
-            $produkId = is_array($itemData) ? (int) ($itemData['produk_id'] ?? (is_numeric($key) ? $key : 0)) : (int) $key;
-            $qty = is_array($itemData) ? (float) ($itemData['qty'] ?? 0) : (float) $itemData;
-            $varianId = is_array($itemData) ? ($itemData['varian_id'] ?? null) : null;
-
-            if ($produkId <= 0 && is_string($key)) {
-                $pRow = $db->table('produk')->like('nama', str_replace('_', ' ', $key))->get()->getRowArray();
-                if ($pRow) $produkId = (int) $pRow['id'];
-            }
-
-            $p = $db->table('produk')->where('id', $produkId)->get()->getRowArray();
-            if (! $p) continue;
-
-            $harga = (float) $p['harga'];
-            $namaVarian = '';
-            if ($varianId) {
-                $v = $db->table('varian_produk')->where('id', (int) $varianId)->get()->getRowArray();
-                if ($v) {
-                    if (! empty($v['harga']) && (float) $v['harga'] > 0) {
-                        $harga = (float) $v['harga'];
-                    }
-                    $namaVarian = $v['nama_varian'];
-                }
-            }
-
-            $itemSubtotal = $qty * $harga;
+        foreach ($selectedItems as $item) {
+            $itemSubtotal = $item['qty'] * $item['harga'];
             $subtotal += $itemSubtotal;
 
             $itemsDetail[] = [
-                'produk_id'     => $produkId,
-                'nama'          => $p['nama'],
-                'varian_nama'   => $namaVarian,
-                'kategori'      => $p['kategori'],
-                'harga'         => $harga,
-                'qty'           => $qty,
+                'produk_id'     => $item['produk_id'],
+                'nama'          => $item['nama'],
+                'varian_nama'   => $item['varian_nama'],
+                'harga'         => $item['harga'],
+                'qty'           => $item['qty'],
                 'subtotal_item' => $itemSubtotal,
             ];
         }
@@ -254,12 +259,12 @@ class PesanStand extends BaseController
         $total = $subtotal + $biayaStand;
 
         $data = [
-            'title'         => 'Ringkasan Booking — Stand Acara Siomay Dua Putri',
-            'formData'      => $formData,
-            'itemsDetail'   => $itemsDetail,
-            'subtotal'      => $subtotal,
-            'biayaStand'    => $biayaStand,
-            'total'         => $total,
+            'title'       => 'Ringkasan Booking — Stand Acara Siomay Dua Putri',
+            'formData'    => $formData,
+            'itemsDetail' => $itemsDetail,
+            'subtotal'    => $subtotal,
+            'biayaStand'  => $biayaStand,
+            'total'       => $total,
         ];
 
         return view('pesan_stand/ringkasan', $data);
@@ -282,24 +287,17 @@ class PesanStand extends BaseController
         $pengaturan = (new PengaturanModel())->getSingleton();
         $biayaStand = (float) ($pengaturan['biaya_stand'] ?? 0.0);
 
-        $db = \Config\Database::connect();
-        $produkIds = array_keys($selectedItems);
-        $rows = $db->table('produk')->whereIn('id', $produkIds)->get()->getResultArray();
-
         $subtotal = 0.0;
         $itemsToInsert = [];
 
-        foreach ($rows as $p) {
-            $id = (int) $p['id'];
-            $qty = (float) ($selectedItems[$id] ?? 0);
-            $harga = (float) $p['harga'];
-            $itemSubtotal = $qty * $harga;
+        foreach ($selectedItems as $item) {
+            $itemSubtotal = $item['qty'] * $item['harga'];
             $subtotal += $itemSubtotal;
 
             $itemsToInsert[] = [
-                'produk_id'             => $id,
-                'jumlah'                => $qty,
-                'harga_satuan_snapshot' => $harga,
+                'produk_id'             => $item['produk_id'],
+                'jumlah'                => $item['qty'],
+                'harga_satuan_snapshot' => $item['harga'],
                 'subtotal_item'         => $itemSubtotal,
             ];
         }
@@ -307,6 +305,7 @@ class PesanStand extends BaseController
         $total = $subtotal + $biayaStand;
         $kodeBooking = 'STN-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 
+        $db = \Config\Database::connect();
         $db->transStart();
 
         $pesananAcaraData = [
@@ -373,39 +372,35 @@ class PesanStand extends BaseController
             ->where('ipa.pesanan_acara_id', (int) $booking['id'])
             ->get()->getResultArray();
 
+        $grossAmount = (int) round((float) $booking['total']);
+        $orderId     = 'TRX-' . $kodeBooking . '-' . time();
+
+        $db->table('transaksi')->insert([
+            'pesanan_acara_id'  => (int) $booking['id'],
+            'midtrans_order_id' => $orderId,
+            'status_pembayaran' => 'pending',
+            'mdr_persen'        => 0,
+            'nominal_diterima'  => 0,
+        ]);
+
+        $snap = \App\Services\MidtransService::createSnapToken($orderId, $grossAmount, [], [
+            'first_name' => $booking['nama_pemesan'],
+            'phone'      => $booking['nomor_hp'],
+        ]);
+
+        if (! ($snap['ok'] ?? false)) {
+            die('MIDTRANS ERROR: ' . ($snap['error'] ?? 'Unknown error'));
+        }
+
         $data = [
-            'title'   => 'Pembayaran QRIS — Stand Acara',
-            'booking' => $booking,
-            'items'   => $items,
-            'qrisImg' => base_url('assets/img/qris.jpeg'),
+            'title'      => 'Pembayaran — Stand Acara',
+            'booking'    => $booking,
+            'items'      => $items,
+            'snapToken'  => $snap['token'],
+            'clientKey'  => env('MIDTRANS_CLIENT_KEY'),
         ];
 
         return view('pesan_stand/pembayaran', $data);
-    }
-
-    public function konfirmasiBayar(string $kodeBooking)
-    {
-        $pembeliId = (int) session()->get('pembeli_id');
-        if (! $pembeliId) {
-            return redirect()->to('/daftar')->with('error', 'Silakan login terlebih dahulu.');
-        }
-
-        $pesananAcaraModel = new PesananAcaraModel();
-        $booking = $pesananAcaraModel
-            ->where('kode_booking', $kodeBooking)
-            ->where('pembeli_id', $pembeliId)
-            ->first();
-
-        if (! $booking) {
-            return redirect()->to('/pesan-stand/tentang')->with('error', 'Data booking tidak ditemukan.');
-        }
-
-        $pesananAcaraModel->update((int) $booking['id'], [
-            'status_pembayaran' => 'menunggu_konfirmasi',
-        ]);
-
-        return redirect()->to('/pesan-stand/berhasil/' . $kodeBooking)
-            ->with('message', 'Terima kasih! Pembayaran Anda sedang menunggu konfirmasi admin.');
     }
 
     // ====================================================================
