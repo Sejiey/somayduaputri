@@ -55,7 +55,7 @@
             z-index: 9999;
             padding: 15px 0;
             background-color: var(--background); 
-            background-image: url('<?= base_url("bg.png") ?>'); 
+            background-image: url('<?= base_url("bg_2.png") ?>'); 
             background-size: cover;
             background-position: top center;
             border-bottom: 1px solid rgba(59, 25, 143, 0.1);

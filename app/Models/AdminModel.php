@@ -44,6 +44,12 @@ class AdminModel extends Model
         return $row ?: null;
     }
 
+    public function findByEmail(string $email): ?array
+    {
+        $row = $this->where('email', $email)->first();
+        return $row ?: null;
+    }
+
     public function countAll(): int
     {
         return $this->countAllResults();

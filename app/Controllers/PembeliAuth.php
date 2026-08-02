@@ -7,6 +7,10 @@ use App\Models\PembeliModel;
 
 class PembeliAuth extends BaseController
 {
+    private const ADMIN_MAX_ATTEMPTS   = 5;
+    private const ADMIN_WINDOW_SECONDS = 600;
+    private const ADMIN_LOCK_SECONDS   = 600;
+
     public function register()
     {
         $redirect = (string) $this->request->getGet('redirect');
@@ -121,8 +125,35 @@ class PembeliAuth extends BaseController
         $plain = (string) $this->request->getPost('password');
         $redirectTarget = trim((string) $this->request->getPost('redirect'));
 
+        // Cek dulu apakah email ini terdaftar sebagai admin.
+        if ($this->adminRemainingLockSeconds() > 0) {
+            return redirect()->back()->withInput()
+                ->with('error', 'Terlalu banyak percobaan gagal. Coba lagi nanti.');
+        }
+
+        $adminModel = new \App\Models\AdminModel();
+        $adminRow   = $adminModel->findByEmail($email);
+
+        if ($adminRow) {
+            if (! password_verify($plain, $adminRow['password_hash'])) {
+                $this->registerAdminFailedAttempt();
+                return redirect()->back()->withInput()->with('error', 'Email atau password salah.');
+            }
+
+            $this->clearAdminFailedAttempts();
+            session()->regenerate();
+            session()->set([
+                'admin_id'   => (int) $adminRow['id'],
+                'admin_user' => $adminRow['username'],
+                'admin_nama' => $adminRow['nama_toko'],
+            ]);
+
+            return redirect()->to(base_url('admin/dashboard'))
+                ->with('message', 'Berhasil login. Selamat datang, ' . $adminRow['nama_toko'] . '!');
+        }
+
         $pembeli = (new PembeliModel())->findByEmail($email);
-        
+
         if (! $pembeli || ! PembeliModel::verifyPassword($plain, $pembeli['password_hash'])) {
             return redirect()->back()->withInput()->with('error', 'Email atau password salah.');
         }
@@ -139,6 +170,40 @@ class PembeliAuth extends BaseController
         }
 
         return redirect()->to(base_url('/'))->with('message', 'Berhasil login. Selamat datang, ' . $pembeli['nama'] . '!');
+    }
+
+    private function registerAdminFailedAttempt(): void
+    {
+        $session  = session();
+        $attempts = (int) ($session->get('admin_login_attempts') ?? 0) + 1;
+        $firstAt  = $session->get('admin_login_first_at') ?? time();
+        if ($attempts === 1) {
+            $firstAt = time();
+        }
+        $session->set('admin_login_attempts', $attempts);
+        $session->set('admin_login_first_at', $firstAt);
+        if ($attempts >= self::ADMIN_MAX_ATTEMPTS) {
+            $session->set('admin_login_locked_until', time() + self::ADMIN_LOCK_SECONDS);
+        }
+    }
+
+    private function clearAdminFailedAttempts(): void
+    {
+        session()->remove(['admin_login_attempts', 'admin_login_first_at', 'admin_login_locked_until']);
+    }
+
+    private function adminRemainingLockSeconds(): int
+    {
+        $lockedUntil = session()->get('admin_login_locked_until');
+        if (! $lockedUntil) {
+            return 0;
+        }
+        $remaining = (int) $lockedUntil - time();
+        if ($remaining <= 0) {
+            session()->remove(['admin_login_attempts', 'admin_login_first_at', 'admin_login_locked_until']);
+            return 0;
+        }
+        return $remaining;
     }
 
     public function logout()

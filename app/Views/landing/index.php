@@ -36,11 +36,11 @@
                     </button>
                     <a href="<?= base_url('pesan-antar') ?>" class="btn-hero solid">
                         <div class="icon-wrap"><span class="material-symbols-outlined">moped</span></div>
-                        <span class="text-btn">PESAN ANTAR<br><strong>via maxim</strong></span>
+                        <span class="text-btn">PESAN ANTAR<br><strong>Hari Ini</strong></span>
                     </a>
                     <a href="<?= base_url('pesan-stand/tentang') ?>" class="btn-hero solid">
                         <div class="icon-wrap"><span class="material-symbols-outlined">storefront</span></div>
-                        <span class="text-btn">PESAN STAND<br><strong>ACARA</strong></span>
+                        <span class="text-btn">PESAN PORSI<br><strong>Besar</strong></span>
                     </a>
                 </div>
             </div>
@@ -59,14 +59,9 @@
                 </div>
             </div>
         </div>
-
-        <div class="hero-wave">
-            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0,60 C320,120 420,0 720,60 C1020,120 1120,0 1440,60 L1440,120 L0,120 Z" fill="#ffffff"/>
-            </svg>
-        </div>
     </section>
 
+    <!-- SECTION TENGAH (BACKGROUND PUTIH) -->
     <section class="features-section">
         <div class="container features-grid">
             
@@ -91,8 +86,8 @@
                         <div class="feature-icon-wrapper">
                             <span class="material-symbols-outlined">storefront</span>
                         </div>
-                        <h4>Melayani Acara Besar</h4>
-                        <p>Siap melayani berbagai acara dengan standar pelayanan terbaik kami.</p>
+                        <h4>Menerima Porsi Besar</h4>
+                        <p>Melayani pesanan dalam jumlah banyak untuk berbagai acara Anda. Pembayaran praktis, opsi pengiriman via Maxim atau ambil sendiri.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon-wrapper">
@@ -111,41 +106,58 @@
         </div>
     </section>
 
+    <!-- KATEGORI MENU (BACKGROUND PUTIH) -->
     <section id="menu-section" class="menu-section fade-up">
         <div class="container">
-            <h2 class="section-title">Kategori Menu</h2>
+            <h2 class="section-title text-center" style="text-align: center;">Kategori Menu</h2>
             <div class="menu-grid">
-                <div class="menu-item">
+                
+                <div class="menu-item" onclick="toggleMenuDesc(this)">
                     <div class="menu-img-wrapper"><img src="<?= base_url('assets/img/menu_1.png') ?>" alt="Siomay & Tahu"></div>
                     <h3 class="menu-name">Siomay & Tahu</h3>
+                    <div class="menu-desc-box">
+                        Terbuat dari daging sapi segar pilihan yang digiling lembut. Khusus varian tahu, kami menghadirkan isian unik berisikan paduan daging sapi, wortel, dan daun bawang. Solusi cerdas menikmati sayuran dengan cita rasa gurih yang tidak membuat eneg.
+                    </div>
                 </div>
-                <div class="menu-item">
+                
+                <div class="menu-item" onclick="toggleMenuDesc(this)">
                     <div class="menu-img-wrapper"><img src="<?= base_url('assets/img/menu_2.jpeg') ?>" alt="Lumpia"></div>
                     <h3 class="menu-name">Lumpia</h3>
+                    <div class="menu-desc-box">
+                        Sajian renyah di luar dan bernutrisi di dalam. Berisi paduan suwiran daging ayam gurih, buncis segar, dan irisan wortel pilihan.
+                    </div>
                 </div>
-                <div class="menu-item">
+                
+                <div class="menu-item" onclick="toggleMenuDesc(this)">
                     <div class="menu-img-wrapper"><img src="<?= base_url('assets/img/menu_3.png') ?>" alt="Aneka Gorengan"></div>
                     <h3 class="menu-name">Aneka Gorengan</h3>
+                    <div class="menu-desc-box">
+                        Pilihan pelengkap nikmat yang beragam. Tersedia nugget ayam, sosis, pentol goreng, siomay ikan, dan sempol ayam.
+                    </div>
                 </div>
-                <div class="menu-item">
+                
+                <div class="menu-item" onclick="toggleMenuDesc(this)">
                     <div class="menu-img-wrapper"><img src="<?= base_url('assets/img/menu_4.png') ?>" alt="Batagor"></div>
                     <h3 class="menu-name">Batagor</h3>
+                    <div class="menu-desc-box">
+                        Olahan handmade autentik dengan isian paduan tahu, daging giling, dan daun bawang. Menawarkan cita rasa gurih yang dijamin membuat ketagihan.
+                    </div>
                 </div>
-                <div class="menu-item">
+                
+                <div class="menu-item" onclick="toggleMenuDesc(this)">
                     <div class="menu-img-wrapper"><img src="<?= base_url('assets/img/menu_5.png') ?>" alt="Es jeruk"></div>
                     <h3 class="menu-name">Es jeruk</h3>
+                    <div class="menu-desc-box">
+                        Sajian es rasa jeruk manis yang pas dan tidak berlebihan tanpa tambahan gula biang. Pelepas dahaga segar dengan harga hemat hanya Rp2.000/cup.
+                    </div>
                 </div>
+
             </div>
         </div>
     </section>
 
+    <!-- SECTION BAWAH (BACKGROUND UNGU POLA) -->
     <section id="layanan-section" class="services-section fade-up">
-        <div class="layanan-wave-top">
-            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0,60 C320,120 420,0 720,60 C1020,120 1120,0 1440,60 L1440,0 L0,0 Z" fill="#ffffff"/>
-            </svg>
-        </div>
-
         <div class="container position-relative">
             <h2 class="section-title">Layanan Kami</h2>
             <div class="services-grid">
@@ -154,7 +166,7 @@
                     <img src="<?= base_url('assets/img/qris.jpeg') ?>" alt="QRIS" class="service-img qris-img">
                     <div class="service-info">
                         <h3>Tampilkan QRIS</h3>
-                        <p>Bayar mudah & cepat menggunakan QRIS. Tanpa uang tunai.</p>
+                        <p>Makan di tempat lebih praktis. Cukup masukkan total nominal belanja Anda untuk memunculkan QRIS otomatis.</p>
                         <a href="<?= base_url('qris') ?>" class="btn-service">Lihat QRIS</a>
                     </div>
                 </div>
@@ -163,18 +175,18 @@
                     <img src="<?= base_url('assets/img/maxim.png') ?>" alt="Maxim Delivery" class="service-img maxim-img">
                     <div class="service-info">
                         <h3>Pesan Antar</h3>
-                        <p>Pesan makanan favorit anda dan kami antar <strong>sampai ke titik anda.</strong> Minimal transaksi Rp100.000</p>
+                        <p>Pesan menu favorit Anda untuk dikirim hari ini. Gratis antar ke ruangan area Undata, atau kirim via Maxim untuk luar area.</p>
                         <span class="courier-note">Pengantaran via maxim <span class="badge-maxim">maxim</span></span>
                         <a href="<?= base_url('pesan-antar') ?>" class="btn-service">Pesan Antar</a>
                     </div>
                 </div>
 
                 <div class="service-card">
-                    <img src="<?= base_url('assets/img/stand.png') ?>" alt="Stand Acara" class="service-img stand-img">
+                    <img src="<?= base_url('assets/img/stand.png') ?>" alt="Pesan Porsi Besar" class="service-img stand-img">
                     <div class="service-info">
-                        <h3>Stand Acara</h3>
-                        <p>Kami siap hadir untuk berbagai acara spesial Anda.</p>
-                        <a href="<?= base_url('pesan-stand/tentang') ?>" class="btn-service mt-auto">Booking Stand</a>
+                        <h3>Pesan Porsi Besar</h3>
+                        <p>Melayani pesanan dalam jumlah banyak untuk berbagai acara Anda. Pembayaran praktis, opsi pengiriman via Maxim atau ambil sendiri.</p>
+                        <a href="<?= base_url('pesan-stand/tentang') ?>" class="btn-service mt-auto">Atur Tanggal</a>
                     </div>
                 </div>
 
@@ -201,6 +213,7 @@
         --t-smooth: all 0.3s ease;
     }
 
+    /* GLOBAL WARNA DIKEMBALIKAN KE PUTIH AGAR TENGAH TETAP PUTIH */
     .landing-page-wrapper {
         background-color: var(--c-white);
         overflow-x: hidden;
@@ -222,25 +235,15 @@
         margin-bottom: 2rem;
     }
 
-    /* 1. HERO SECTION */
+    /* 1. HERO SECTION (BACKGROUND UNGU POLA) */
     .hero-premium {
         position: relative;
-        padding: 120px 0 80px;
+        padding: 120px 0 160px; /* Padding bawah ditambah dari 80px ke 160px agar ungu turun ke bawah */
         background-color: var(--c-primary-soft);
         background-image: url('<?= base_url("bg.png") ?>');
         background-size: cover;
         background-position: top center;
     }
-    
-    .hero-wave {
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        width: 100%;
-        line-height: 0;
-        z-index: 5;
-    }
-    .hero-wave svg { width: 100%; height: 60px; }
 
     .hero-grid {
         display: grid;
@@ -268,25 +271,9 @@
         max-width: 280px;
         margin-bottom: 20px;
     }
-    .hero-subtitle-line .line {
-        flex: 1;
-        height: 1.5px;
-        background-color: var(--c-primary);
-        opacity: 0.4;
-    }
-    .hero-subtitle-line .text {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 700;
-        color: var(--c-primary);
-        font-size: 1rem;
-    }
-    .hero-desc {
-        font-size: 1.1rem;
-        color: var(--c-text);
-        max-width: 450px;
-        margin-bottom: 40px;
-        line-height: 1.6;
-    }
+    .hero-subtitle-line .line { flex: 1; height: 1.5px; background-color: var(--c-primary); opacity: 0.4; }
+    .hero-subtitle-line .text { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--c-primary); font-size: 1rem; }
+    .hero-desc { font-size: 1.1rem; color: var(--c-text); max-width: 450px; margin-bottom: 40px; line-height: 1.6; }
 
     .hero-buttons {
         display: flex;
@@ -317,343 +304,132 @@
     .btn-hero.solid:hover { background-color: #2e1069; border-color: #2e1069; }
 
     /* Visual Kanan */
-    .hero-visual {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        width: 100%;
-    }
+    .hero-visual { display: flex; justify-content: flex-end; align-items: center; width: 100%; }
+    .hero-composition { position: relative; width: 100%; max-width: 580px; height: 500px; margin-right: 20px; }
+    .main-image-shadow-wrapper { width: 100%; height: 100%; filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.15)); position: relative; z-index: 1; }
+    .main-image-wrapper { width: 100%; height: 100%; clip-path: url(#hero-blob); -webkit-clip-path: url(#hero-blob); background-color: var(--c-white); }
+    .main-image { width: 100%; height: 100%; object-fit: cover; }
+    .float-img { position: absolute; border: none; background-color: transparent; border-radius: 0; box-shadow: none; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.4)); }
+    .float-1 { width: 250px; bottom: -50px; right: 140px; z-index: 10; }
+    .float-2 { width: 200px; bottom: 0px; right: -10px; z-index: 9; }
+    .float-3 { width: 130px; bottom: 50px; right: -30px; z-index: 8; transform: rotate(12deg); }
+
+    /* 2. KENAPA MEMILIH KAMI (STATIS & PUTIH) */
+    .features-section { padding: 60px 0 80px; background-color: var(--c-white); }
+    .features-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }
+    .features-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .feature-card { background: var(--c-white); border: 1px solid rgba(59, 25, 143, 0.1); padding: 24px 16px; border-radius: 12px; text-align: center; }
+    .feature-icon-wrapper { width: 55px; height: 55px; margin: 0 auto 15px; border-radius: 50%; border: 2px solid var(--c-primary); display: flex; align-items: center; justify-content: center; position: relative; }
+    .feature-icon-wrapper::after { content: ''; position: absolute; width: 40px; height: 40px; background-color: var(--c-primary); border-radius: 50%; z-index: 0; }
+    .feature-icon-wrapper .material-symbols-outlined { color: var(--c-white); font-size: 24px; z-index: 1; }
+    .feature-card h4 { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--c-primary); margin: 0 0 8px; font-size: 0.95rem; }
+    .feature-card p { font-size: 0.75rem; color: var(--c-text-muted); margin: 0; line-height: 1.5; }
+
+    .features-visual { position: relative; display: flex; justify-content: flex-end; align-items: center; width: 100%; height: 100%; }
+    .purple-blob { position: absolute; right: -40px; width: 350px; height: 450px; background-color: var(--c-primary-soft); border-radius: 200px 0 0 200px; z-index: 0; }
+    .feature-main-img { width: 100%; max-width: 420px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow-float); position: relative; z-index: 1; }
+
+    /* 3. KATEGORI MENU (INTERAKTIF & PUTIH) */
+    .menu-section { padding: 20px 0 80px; background-color: var(--c-white); }
+    .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; justify-items: center; align-items: start; }
+    @media (min-width: 768px) { .menu-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .menu-grid { grid-template-columns: repeat(5, 1fr); gap: 20px; } }
     
-    .hero-composition {
-        position: relative;
-        width: 100%;
-        max-width: 580px; 
-        height: 500px;
-        margin-right: 20px;
-    }
-
-    .main-image-shadow-wrapper {
-        width: 100%;
-        height: 100%;
-        filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.15));
-        position: relative;
-        z-index: 1;
-    }
-
-    .main-image-wrapper {
-        width: 100%;
-        height: 100%;
-        clip-path: url(#hero-blob);
-        -webkit-clip-path: url(#hero-blob);
-        background-color: var(--c-white);
-    }
-    .main-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    /* Gambar Makanan Melayang (PNG Asli) */
-    .float-img {
-        position: absolute;
-        border: none;
-        background-color: transparent;
-        border-radius: 0;
-        box-shadow: none; 
-        object-fit: contain;
-        filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.4));
-    }
-    
-    .float-1 { 
-        width: 250px; 
-        bottom: -50px; 
-        right: 140px; 
-        z-index: 10; 
-    }
-    .float-2 { 
-        width: 200px; 
-        bottom: 0px; 
-        right: -10px; 
-        z-index: 9; 
-    }
-    .float-3 { 
-        width: 130px; 
-        bottom: 50px; 
-        right: -30px; 
-        z-index: 8; 
-        transform: rotate(12deg); 
-    }
-
-    /* 2. KENAPA MEMILIH KAMI */
-    .features-section {
-        padding: 60px 0 80px;
-        background-color: var(--c-white);
-    }
-    .features-grid {
-        display: grid;
-        grid-template-columns: 1.3fr 1fr;
-        gap: 40px;
-        align-items: center;
-    }
-    .features-cards {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-    }
-    .feature-card {
-        background: var(--c-white);
-        border: 1px solid rgba(59, 25, 143, 0.1);
-        padding: 24px 16px;
-        border-radius: 12px;
-        text-align: center;
-        transition: var(--t-smooth);
-    }
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-light);
-    }
-    
-    .feature-icon-wrapper {
-        width: 55px;
-        height: 55px;
-        margin: 0 auto 15px;
-        border-radius: 50%;
-        border: 2px solid var(--c-primary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-    }
-    .feature-icon-wrapper::after {
-        content: '';
-        position: absolute;
-        width: 40px; height: 40px;
-        background-color: var(--c-primary);
-        border-radius: 50%;
-        z-index: 0;
-    }
-    .feature-icon-wrapper .material-symbols-outlined {
-        color: var(--c-white);
-        font-size: 24px;
-        z-index: 1;
-    }
-
-    .feature-card h4 {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 700;
-        color: var(--c-primary);
-        margin: 0 0 8px;
-        font-size: 0.95rem;
-    }
-    .feature-card p {
-        font-size: 0.75rem;
-        color: var(--c-text-muted);
-        margin: 0;
-        line-height: 1.5;
-    }
-
-    .features-visual {
-        position: relative;
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-    }
-    .purple-blob {
-        position: absolute;
-        right: -40px;
-        width: 350px;
-        height: 450px;
-        background-color: var(--c-primary-soft);
-        border-radius: 200px 0 0 200px;
-        z-index: 0;
-    }
-    .feature-main-img {
-        width: 100%;
-        max-width: 420px;
-        border-radius: 50%;
-        object-fit: cover;
-        box-shadow: var(--shadow-float);
-        position: relative;
-        z-index: 1;
-    }
-
-    /* 3. KATEGORI MENU */
-    .menu-section {
-        padding: 20px 0 80px;
-        background-color: var(--c-white);
-    }
-    .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 30px;
-        justify-items: center;
-    }
-    @media (min-width: 768px) {
-        .menu-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-    @media (min-width: 1024px) {
-        .menu-grid { grid-template-columns: repeat(5, 1fr); gap: 40px; }
-    }
     .menu-item {
-        width: 100%;
-        max-width: 180px;
-        text-align: center;
+        width: 100%; max-width: 220px; text-align: center; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center;
     }
+    
     @keyframes floatMenu {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-10px); }
     }
+    
     .menu-img-wrapper {
-        width: 160px;
-        height: 160px;
-        margin: 0 auto 15px;
-        border-radius: 50%;
-        padding: 8px;
-        background: var(--c-white);
-        box-shadow: var(--shadow-light);
-        animation: floatMenu 3.5s ease-in-out infinite;
+        width: 160px; height: 160px; margin: 0 auto 15px; border-radius: 50%;
+        padding: 8px; background: var(--c-white); box-shadow: var(--shadow-light);
+        animation: floatMenu 3.5s ease-in-out infinite; transition: all 0.3s ease;
     }
     .menu-item:nth-child(1) .menu-img-wrapper { animation-delay: 0s; }
     .menu-item:nth-child(2) .menu-img-wrapper { animation-delay: 0.7s; }
     .menu-item:nth-child(3) .menu-img-wrapper { animation-delay: 1.4s; }
     .menu-item:nth-child(4) .menu-img-wrapper { animation-delay: 2.1s; }
     .menu-item:nth-child(5) .menu-img-wrapper { animation-delay: 2.8s; }
-    .menu-img-wrapper img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
+    
+    .menu-img-wrapper img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .menu-name { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--c-primary); font-size: 1.05rem; margin: 0; transition: 0.3s; }
+
+    /* STATE AKTIF KETIKA DITEKAN (POP UP & BERHENTI GERAK) */
+    .menu-item.active .menu-img-wrapper {
+        animation-play-state: paused;
+        transform: translateY(-15px);
+        box-shadow: 0 15px 30px rgba(59, 25, 143, 0.2);
     }
-    .menu-name {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 700;
-        color: var(--c-primary);
-        font-size: 1.05rem;
-        margin: 0;
+    .menu-item.active .menu-name { transform: translateY(-10px); }
+
+    /* KOTAK DESKRIPSI (SLIDE DOWN ACCORDION) */
+    .menu-desc-box {
+        max-height: 0; opacity: 0; overflow: hidden; font-size: 0.8rem;
+        color: var(--c-text-muted); line-height: 1.5; padding: 0 10px;
+        transition: all 0.4s ease-in-out; text-align: center;
+    }
+    .menu-item.active .menu-desc-box {
+        max-height: 250px; opacity: 1; margin-top: 0px;
     }
 
-    /* 4. LAYANAN KAMI */
+    /* 4. LAYANAN KAMI (BACKGROUND UNGU POLA) */
     .services-section {
-        position: relative;
-        padding: 100px 0 100px;
+        position: relative; padding: 100px 0 100px;
         background-color: var(--c-primary-soft);
         background-image: url('<?= base_url("bg.png") ?>'); 
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-position: center;
+        background-size: cover; background-repeat: no-repeat; background-position: center;
     }
-    
-    .layanan-wave-top {
-        position: absolute;
-        top: -1px;
-        left: 0;
-        width: 100%;
-        line-height: 0;
-        z-index: 5;
-    }
-    .layanan-wave-top svg { width: 100%; height: 60px; }
 
-    .services-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-    }
-    .service-card {
-        background: var(--c-white);
-        border-radius: 12px;
-        padding: 24px;
-        display: flex;
-        gap: 16px;
-        box-shadow: var(--shadow-light);
-        align-items: center;
-    }
-    .service-img {
-        width: 100px;
-        height: 100px;
-        object-fit: contain;
-        flex-shrink: 0;
-        border-radius: 8px;
-    }
+    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .service-card { background: var(--c-white); border-radius: 12px; padding: 24px; display: flex; gap: 16px; box-shadow: var(--shadow-light); align-items: center; border: 1px solid rgba(255, 255, 255, 0.4); }
+    .service-img { width: 100px; height: 100px; object-fit: contain; flex-shrink: 0; border-radius: 8px; }
     .qris-img { border: 1px solid #eee; }
     
-    .service-info {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-    }
-    .service-info h3 {
-        color: var(--c-primary);
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin: 0 0 6px;
-    }
-    .service-info p {
-        font-size: 0.8rem;
-        color: var(--c-text-muted);
-        margin: 0 0 10px;
-        line-height: 1.4;
-    }
-    .courier-note {
-        font-size: 0.7rem;
-        font-weight: 600;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--c-text);
-    }
-    .badge-maxim {
-        background-color: #FFEB3B;
-        color: #000;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-weight: 800;
-    }
-    .btn-service {
-        background-color: var(--c-primary);
-        color: var(--c-white);
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.8rem;
-        cursor: pointer;
-        text-align: center;
-        transition: var(--t-smooth);
-        align-self: flex-start;
-        text-decoration: none;
-    }
+    .service-info { display: flex; flex-direction: column; flex: 1; }
+    .service-info h3 { color: var(--c-primary); font-size: 1.1rem; font-weight: 700; margin: 0 0 6px; }
+    .service-info p { font-size: 0.8rem; color: var(--c-text-muted); margin: 0 0 10px; line-height: 1.4; }
+    .courier-note { font-size: 0.7rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: var(--c-text); }
+    .badge-maxim { background-color: #FFEB3B; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 800; }
+    .btn-service { background-color: var(--c-primary); color: var(--c-white); padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; text-align: center; transition: var(--t-smooth); align-self: flex-start; text-decoration: none; }
     .btn-service:hover { background-color: #2e1069; }
 
-    /* Animasi */
-    .fade-up {
-        opacity: 0;
-        transform: translateY(30px);
-        animation: fadeUpAnim 0.8s forwards ease-out;
-    }
+    /* Animasi Bawaan */
+    .fade-up { opacity: 0; transform: translateY(30px); animation: fadeUpAnim 0.8s forwards ease-out; }
     .delay-1 { animation-delay: 0.2s; }
-    
-    @keyframes fadeUpAnim {
-        to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeUpAnim { to { opacity: 1; transform: translateY(0); } }
 
     /* RESPONSIVE (HP & TABLET) */
     @media (max-width: 1024px) {
+        .container { padding: 0 24px; }
         .hero-grid, .features-grid { grid-template-columns: 1fr; text-align: center; }
         .hero-content { align-items: center; display: flex; flex-direction: column; }
-        .hero-buttons { justify-content: center; }
-        .hero-visual { justify-content: center; margin-top: 40px; padding-right: 0; }
         
-        .hero-composition { max-width: 400px; height: 420px; margin-right: 0; margin-bottom: 60px; }
-        .float-1 { width: 200px; bottom: -40px; right: 90px; }
-        .float-2 { width: 160px; bottom: 0px; right: 0px; }
-        .float-3 { width: 100px; bottom: 40px; right: -20px; transform: rotate(12deg); }
+        .hero-title { font-size: 2.5rem; }
+        .hero-desc { font-size: 0.95rem; text-align: center; }
+        
+        .hero-buttons { 
+            display: flex; flex-direction: row; flex-wrap: nowrap; 
+            justify-content: space-between; gap: 8px; width: 100%; max-width: 420px;
+        }
+        .btn-hero { 
+            flex-direction: column; padding: 10px 4px; text-align: center; 
+            flex: 1; font-size: 0.65rem; justify-content: center;
+        }
+        .btn-hero .icon-wrap { margin-bottom: 6px; }
+
+        .hero-visual { justify-content: center; margin-top: 40px; padding-right: 0; }
+        .hero-composition { max-width: 320px; height: 350px; margin: 0 auto 60px; }
+        .float-1 { width: 180px; bottom: -30px; right: 60px; }
+        .float-2 { width: 130px; bottom: 10px; right: -10px; }
+        .float-3 { width: 80px; bottom: 50px; right: -20px; transform: rotate(12deg); }
         
         .features-cards { grid-template-columns: 1fr 1fr; }
-        .purple-blob { display: none; }
-        .feature-main-img { max-width: 300px; }
+        .feature-main-img { max-width: 250px; }
         
         .services-grid { grid-template-columns: 1fr; }
         .service-card { flex-direction: column; align-items: center; text-align: center; }
@@ -662,6 +438,18 @@
 </style>
 
 <script>
+// Fungsi untuk memunculkan teks di bawah menu saat di-klik (Accordion style)
+function toggleMenuDesc(element) {
+    document.querySelectorAll('.menu-item').forEach(item => {
+        if (item !== element) {
+            item.classList.remove('active');
+        }
+    });
+    
+    element.classList.toggle('active');
+}
+
+// Navigasi Scrollspy
 document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-menu a');
     if (!navLinks || navLinks.length < 4) return;
