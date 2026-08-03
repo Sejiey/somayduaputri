@@ -280,8 +280,15 @@
             <p>Selamat datang kembali!</p>
         </div>
 
+        <div class="alert-box" id="jsAlertBox" style="display:none;">
+            <span class="material-symbols-outlined">error</span>
+            <div class="alert-content">
+                <span id="jsAlertMsg">Silakan isi Email dan Kata Sandi terlebih dahulu.</span>
+            </div>
+        </div>
+
         <?php if (session()->getFlashdata('error')): ?>
-            <div class="alert-box">
+            <div class="alert-box" id="serverAlertBox">
                 <span class="material-symbols-outlined">error</span>
                 <div class="alert-content">
                     <span><?= esc(session()->getFlashdata('error')) ?></span>
@@ -291,7 +298,7 @@
 
         <?php $fieldErrors = session()->getFlashdata('errors'); ?>
         <?php if (! empty($fieldErrors) && is_array($fieldErrors)): ?>
-            <div class="alert-box">
+            <div class="alert-box" id="serverFieldAlertBox">
                 <span class="material-symbols-outlined">error</span>
                 <div class="alert-content">
                     <?php foreach ($fieldErrors as $msg): ?>
@@ -302,7 +309,7 @@
         <?php endif; ?>
 
         <!-- Form Login -->
-        <form method="post" action="<?= base_url('login') ?>" novalidate>
+        <form method="post" action="<?= base_url('login') ?>" id="loginForm" autocomplete="off" novalidate>
             <?= csrf_field() ?>
             
             <!-- Hidden Redirect -->
@@ -314,7 +321,7 @@
                 <label for="email">Email</label>
                 <div class="input-wrapper">
                     <span class="material-symbols-outlined">mail</span>
-                    <input type="email" id="email" name="email" value="<?= esc(old('email')) ?>" placeholder="Masukkan email Anda" required maxlength="255">
+                    <input type="email" id="email" name="email" value="" placeholder="Masukkan email Anda" autocomplete="off" required maxlength="255">
                 </div>
             </div>
 
@@ -322,7 +329,7 @@
                 <label for="password">Kata Sandi</label>
                 <div class="input-wrapper">
                     <span class="material-symbols-outlined">lock</span>
-                    <input type="password" id="password" name="password" placeholder="Masukkan kata sandi" required>
+                    <input type="password" id="password" name="password" value="" placeholder="Masukkan kata sandi" autocomplete="new-password" required>
                     <button type="button" class="btn-eye" onclick="togglePassword('password', 'eye-icon-1')">
                         <span class="material-symbols-outlined" id="eye-icon-1">visibility_off</span>
                     </button>
@@ -338,7 +345,7 @@
 
         <div class="divider">atau</div>
 
-        <button type="button" class="btn-google">
+        <button type="button" class="btn-google" onclick="window.location.href='<?= base_url('auth/google') ?>'">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -366,6 +373,58 @@
                 icon.textContent = 'visibility_off';
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            const emailInput = document.getElementById('email');
+            const passInput = document.getElementById('password');
+            const jsAlertBox = document.getElementById('jsAlertBox');
+            const jsAlertMsg = document.getElementById('jsAlertMsg');
+            const serverAlert = document.getElementById('serverAlertBox');
+            const serverFieldAlert = document.getElementById('serverFieldAlertBox');
+
+            function hideAlerts() {
+                if (jsAlertBox) jsAlertBox.style.display = 'none';
+                if (serverAlert) serverAlert.style.display = 'none';
+                if (serverFieldAlert) serverFieldAlert.style.display = 'none';
+            }
+
+            if (emailInput) {
+                emailInput.addEventListener('focus', hideAlerts);
+                emailInput.addEventListener('input', hideAlerts);
+            }
+            if (passInput) {
+                passInput.addEventListener('focus', hideAlerts);
+                passInput.addEventListener('input', hideAlerts);
+            }
+
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const emailVal = emailInput ? emailInput.value.trim() : '';
+                    const passVal = passInput ? passInput.value.trim() : '';
+
+                    if (!emailVal || !passVal) {
+                        e.preventDefault();
+                        if (jsAlertMsg) {
+                            if (!emailVal && !passVal) {
+                                jsAlertMsg.textContent = 'Silakan isi Email dan Kata Sandi terlebih dahulu.';
+                            } else if (!emailVal) {
+                                jsAlertMsg.textContent = 'Silakan isi Email terlebih dahulu.';
+                            } else {
+                                jsAlertMsg.textContent = 'Silakan isi Kata Sandi terlebih dahulu.';
+                            }
+                        }
+                        if (jsAlertBox) jsAlertBox.style.display = 'flex';
+                        return false;
+                    }
+            // Pastikan kolom selalu bersih/kosong saat dibuka
+            if (emailInput) emailInput.value = '';
+            if (passInput) passInput.value = '';
+            window.addEventListener('pageshow', function() {
+                if (emailInput) emailInput.value = '';
+                if (passInput) passInput.value = '';
+            });
+        });
     </script>
 </body>
 </html>

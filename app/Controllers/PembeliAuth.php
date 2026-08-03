@@ -62,30 +62,29 @@ class PembeliAuth extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        // --- Proses Pendaftaran ---
+        // --- Proses Pendaftaran (Gunakan OTP) ---
         $nama  = trim((string) $this->request->getPost('nama'));
         $email = trim((string) $this->request->getPost('email'));
         $plain = (string) $this->request->getPost('password');
         $redirectTarget = trim((string) $this->request->getPost('redirect'));
 
-        $pembeli = new PembeliModel();
-        $id = $pembeli->insert([
-            'nama'          => $nama,
-            'email'         => $email,
-            'password_hash' => PembeliModel::hashPassword($plain),
-        ], true);
+        $otpCode = sprintf('%06d', rand(0, 999999));
+        session()->set([
+            'temp_register' => [
+                'nama'          => $nama,
+                'email'         => $email,
+                'password_hash' => PembeliModel::hashPassword($plain),
+                'redirect'      => $redirectTarget,
+            ],
+            'otp_code'       => $otpCode,
+            'otp_email'      => $email,
+            'otp_purpose'    => 'register',
+            'otp_expires_at' => time() + 900,
+        ]);
 
-        if (! $id) {
-            return redirect()->back()->withInput()->with('error', 'Pendaftaran gagal. Coba lagi.');
-        }
+        $this->sendOtpEmail($email, $otpCode);
 
-        // Bawa parameter redirect ke halaman login jika user datang dari halaman pesan
-        $loginUrl = base_url('login');
-        if (!empty($redirectTarget)) {
-            $loginUrl .= '?redirect=' . urlencode($redirectTarget);
-        }
-
-        return redirect()->to($loginUrl)->with('message', 'Akun berhasil dibuat! Silakan masuk menggunakan email dan kata sandi Anda.');
+        return redirect()->to('/verifikasi-otp')->with('info', 'Kode OTP verifikasi telah dikirimkan ke email <strong>' . esc($email) . '</strong>.');
     }
 
     public function login()
@@ -172,6 +171,103 @@ class PembeliAuth extends BaseController
         return redirect()->to(base_url('/'))->with('message', 'Berhasil login. Selamat datang, ' . $pembeli['nama'] . '!');
     }
 
+    public function googleLogin()
+    {
+        $clientId = trim((string) env('GOOGLE_CLIENT_ID'), " \t\n\r\0\x0B'\"");
+        if (empty($clientId)) {
+            return redirect()->to('/login')->with('error', 'Google OAuth Client ID belum dikonfigurasi pada file .env.');
+        }
+
+        $redirectUri = base_url('auth/google/callback');
+        $scope       = urlencode('email profile');
+
+        $url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
+            'client_id'     => $clientId,
+            'redirect_uri'  => $redirectUri,
+            'response_type' => 'code',
+            'scope'         => 'email profile',
+            'access_type'   => 'online',
+            'prompt'        => 'select_account',
+        ]);
+
+        return redirect()->to($url);
+    }
+
+    public function googleCallback()
+    {
+        $code = (string) $this->request->getGet('code');
+        if (empty($code)) {
+            return redirect()->to('/login')->with('error', 'Gagal melakukan otentikasi Google.');
+        }
+
+        $clientId     = trim((string) env('GOOGLE_CLIENT_ID'), " \t\n\r\0\x0B'\"");
+        $clientSecret = trim((string) env('GOOGLE_CLIENT_SECRET'), " \t\n\r\0\x0B'\"");
+        $redirectUri  = base_url('auth/google/callback');
+
+        // Exchange code for token
+        $ch = curl_init('https://oauth2.googleapis.com/token');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+            'code'          => $code,
+            'client_id'     => trim((string) $clientId),
+            'client_secret' => trim((string) $clientSecret),
+            'redirect_uri'  => $redirectUri,
+            'grant_type'    => 'authorization_code',
+        ]));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $tokenData = json_decode((string) $response, true);
+        $accessToken = $tokenData['access_token'] ?? null;
+
+        if (empty($accessToken)) {
+            $errDetail = $tokenData['error_description'] ?? 'Token tidak didapatkan';
+            log_message('error', 'Google OAuth Error: ' . json_encode($tokenData));
+            return redirect()->to('/login')->with('error', 'Gagal mendapatkan token akses dari Google (' . esc($errDetail) . ').');
+        }
+
+        // Fetch User Profile
+        $ch = curl_init('https://www.googleapis.com/oauth2/v2/userinfo');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
+        $userResponse = curl_exec($ch);
+        curl_close($ch);
+
+        $userData = json_decode((string) $userResponse, true);
+        $email    = $userData['email'] ?? null;
+        $nama     = $userData['name'] ?? 'Pengguna Google';
+
+        if (empty($email)) {
+            return redirect()->to('/login')->with('error', 'Gagal mendapatkan email dari akun Google.');
+        }
+
+        $pembeliModel = new PembeliModel();
+        $pembeli = $pembeliModel->findByEmail($email);
+
+        if (! $pembeli) {
+            // Create user account automatically
+            $randomPass = bin2hex(random_bytes(8));
+            $id = $pembeliModel->insert([
+                'nama'          => $nama,
+                'email'         => $email,
+                'password_hash' => PembeliModel::hashPassword($randomPass),
+            ], true);
+            $pembeli = $pembeliModel->find($id);
+        }
+
+        session()->set([
+            'pembeli_id'    => (int) $pembeli['id'],
+            'pembeli_nama'  => $pembeli['nama'],
+            'pembeli_email' => $pembeli['email'],
+        ]);
+
+        return redirect()->to(base_url('/'))->with('message', 'Berhasil login via Google. Selamat datang, ' . $pembeli['nama'] . '!');
+    }
+
     private function registerAdminFailedAttempt(): void
     {
         $session  = session();
@@ -213,18 +309,21 @@ class PembeliAuth extends BaseController
             'pembeli_id',
             'pembeli_nama',
             'pembeli_email',
-            'checkout_tanggal',
-            'tanggal_dibutuhkan',
-            'tanggal_pesanan',
+            'checkout_lokasi',
             'checkout_metode',
             'checkout_catatan',
             'checkout_nama',
             'checkout_nomor_hp',
-            'checkout_catatan_pemesan',
+            'checkout_ruangan',
             'checkout_alamat',
+            'checkout_catatan_pemesan',
             'checkout_catatan_kurir',
             'checkout_alamat_lat',
             'checkout_alamat_lng',
+            'temp_biodata',
+            'checkout_tanggal',
+            'tanggal_dibutuhkan',
+            'tanggal_pesanan',
             'pesan_stand_data',
             'pesan_stand_items',
             'pesan_stand_items_varian',
@@ -254,7 +353,7 @@ class PembeliAuth extends BaseController
             return redirect()->back()->withInput()->with('error', 'Email tidak ditemukan.');
         }
 
-        $token = bin2hex(random_bytes(32));
+        $token     = bin2hex(random_bytes(32));
         $expiresAt = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
         $pembeliModel->update($pembeli['id'], [
@@ -262,12 +361,103 @@ class PembeliAuth extends BaseController
             'reset_token_expires_at' => $expiresAt,
         ]);
 
-        $resetUrl = base_url('reset-password/' . $token);
+        $otpCode = sprintf('%06d', rand(0, 999999));
+        session()->set([
+            'otp_code'       => $otpCode,
+            'otp_email'      => $email,
+            'otp_purpose'    => 'reset_password',
+            'otp_reset_token'=> $token,
+            'otp_expires_at' => time() + 900,
+        ]);
 
-        // TODO: ganti dengan pengiriman email asli setelah SMTP siap
-        $infoMsg = 'Karena email belum aktif, gunakan link ini: <a href="' . $resetUrl . '">' . $resetUrl . '</a>';
+        $this->sendOtpEmail($email, $otpCode);
 
-        return redirect()->back()->with('info', $infoMsg);
+        return redirect()->to('/verifikasi-otp')->with('info', 'Kode OTP reset kata sandi telah dikirimkan ke email <strong>' . esc($email) . '</strong>.');
+    }
+
+    public function verifikasiOtp()
+    {
+        $otpEmail = session('otp_email');
+        if (! $otpEmail) {
+            return redirect()->to('/login')->with('error', 'Sesi verifikasi OTP tidak ditemukan.');
+        }
+
+        if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
+            if ($this->request->getPost('resend')) {
+                $newOtp = sprintf('%06d', rand(0, 999999));
+                session()->set([
+                    'otp_code'       => $newOtp,
+                    'otp_expires_at' => time() + 900,
+                ]);
+                $this->sendOtpEmail($otpEmail, $newOtp);
+                return redirect()->back()->with('info', 'Kode OTP baru telah dikirimkan ulang ke email Anda.');
+            }
+
+            $inputOtp = trim((string) $this->request->getPost('otp_code'));
+            $savedOtp = session('otp_code');
+            $expiresAt = session('otp_expires_at');
+            $purpose   = session('otp_purpose');
+
+            if (time() > $expiresAt) {
+                return redirect()->back()->with('error', 'Kode OTP telah kadaluarsa. Silakan klik kirim ulang.');
+            }
+
+            if ($inputOtp !== $savedOtp) {
+                return redirect()->back()->with('error', 'Kode OTP yang Anda masukkan salah.');
+            }
+
+            if ($purpose === 'register') {
+                $tempReg = session('temp_register');
+                if (! $tempReg) {
+                    return redirect()->to('/daftar')->with('error', 'Data pendaftaran tidak ditemukan.');
+                }
+
+                $pembeliModel = new PembeliModel();
+                $id = $pembeliModel->insert([
+                    'nama'          => $tempReg['nama'],
+                    'email'         => $tempReg['email'],
+                    'password_hash' => $tempReg['password_hash'],
+                ], true);
+
+                $redirectTarget = $tempReg['redirect'] ?? '';
+                session()->remove(['temp_register', 'otp_code', 'otp_email', 'otp_purpose', 'otp_expires_at']);
+
+                $loginUrl = base_url('login');
+                if (! empty($redirectTarget)) {
+                    $loginUrl .= '?redirect=' . urlencode($redirectTarget);
+                }
+
+                return redirect()->to($loginUrl)->with('message', 'Email berhasil diverifikasi & akun berhasil dibuat! Silakan masuk.');
+            } elseif ($purpose === 'reset_password') {
+                $token = session('otp_reset_token');
+                session()->remove(['otp_code', 'otp_email', 'otp_purpose', 'otp_reset_token', 'otp_expires_at']);
+                return redirect()->to('/reset-password/' . $token)->with('message', 'OTP Berhasil diverifikasi. Silakan buat kata sandi baru Anda.');
+            }
+        }
+
+        return view('auth/pembeli/otp');
+    }
+
+    private function sendOtpEmail(string $toEmail, string $otpCode): bool
+    {
+        try {
+            $emailService = \Config\Services::email();
+            $emailService->setTo($toEmail);
+            $emailService->setSubject('Kode OTP Verifikasi - Siomay Dua Putri');
+            
+            $message = "<div style='font-family: Arial, sans-serif; padding: 20px; color: #1E293B;'>";
+            $message .= "<h2 style='color: #3b198f;'>Siomay Dua Putri</h2>";
+            $message .= "<p>Kode OTP verifikasi Anda adalah:</p>";
+            $message .= "<h1 style='color: #3b198f; font-size: 32px; letter-spacing: 4px;'>" . esc($otpCode) . "</h1>";
+            $message .= "<p>Kode ini berlaku selama 15 menit. Jangan berikan kode ini kepada siapapun.</p>";
+            $message .= "</div>";
+
+            $emailService->setMessage($message);
+            return @$emailService->send();
+        } catch (\Exception $e) {
+            log_message('error', 'Gagal kirim email OTP: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function resetPassword($token = null)

@@ -19,105 +19,95 @@ class ProdukAdmin extends BaseController
 
     public function index()
     {
-        $data['produk'] = $this->produk->orderBy('kategori', 'ASC')
-            ->orderBy('nama', 'ASC')
-            ->findAll();
+        $tab = $this->request->getGet('tab') ?? 'semua';
+        $builder = $this->produk->builder();
+
+        if ($tab === 'aktif') {
+            $builder->where('status_aktif', 1);
+        } elseif ($tab === 'nonaktif') {
+            $builder->where('status_aktif', 0);
+        }
+
+        $listProduk = $builder->orderBy('id', 'DESC')->get()->getResultArray();
+
+        // Attach varian
+        foreach ($listProduk as &$p) {
+            $p['varians'] = $this->varian->where('produk_id', $p['id'])->findAll();
+        }
+
+        // Tab counts
+        $countSemua = $this->produk->countAllResults();
+        $countAktif = $this->produk->where('status_aktif', 1)->countAllResults();
+        $countNonaktif = $this->produk->where('status_aktif', 0)->countAllResults();
+
+        $data = [
+            'title'         => 'Produk / Menu — Siomay Dua Putri',
+            'produk'        => $listProduk,
+            'current_tab'   => $tab,
+            'count_semua'   => $countSemua,
+            'count_aktif'   => $countAktif,
+            'count_nonaktif'=> $countNonaktif,
+        ];
 
         return view('admin/produk/index', $data);
     }
 
-    public function create()
-    {
-        return view('admin/produk/form', [
-            'mode'   => 'create',
-            'produk' => [
-                'id'          => '',
-                'nama'        => '',
-                'kategori'    => 'Somay Sapi',
-                'harga'       => '',
-                'status_aktif'=> 1,
-            ],
-        ]);
-    }
-
     public function store()
     {
-        if (! $this->produk->save($this->collectProdukInput())) {
-            return redirect()->back()->withInput()
-                ->with('errors', $this->produk->errors());
-        }
-        return redirect()->to('/admin/produk')->with('message', 'Produk berhasil ditambahkan.');
-    }
+        $rules = [
+            'nama'     => 'required|min_length[2]|max_length[255]',
+            'kategori' => 'required|max_length[50]',
+            'harga'    => 'required|numeric',
+        ];
 
-    public function edit(int $id)
-    {
-        $produk = $this->produk->find($id);
-        if (! $produk) {
-            return redirect()->to('/admin/produk')->with('error', 'Produk tidak ditemukan.');
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('error', 'Mohon isi semua field dengan benar.');
         }
-        $produk['varian'] = $this->varian->where('produk_id', $id)->findAll();
-        return view('admin/produk/form', [
-            'mode'   => 'edit',
-            'produk' => $produk,
-        ]);
+
+        $data = [
+            'nama'         => $this->request->getPost('nama'),
+            'kategori'     => $this->request->getPost('kategori'),
+            'harga'        => (float) $this->request->getPost('harga'),
+            'status_aktif' => $this->request->getPost('status_aktif') ? 1 : 0,
+        ];
+
+        $this->produk->insert($data);
+
+        return redirect()->to('/admin/produk')->with('success', 'Produk berhasil ditambahkan.');
     }
 
     public function update(int $id)
     {
-        if (! $this->produk->find($id)) {
-            return redirect()->to('/admin/produk')->with('error', 'Produk tidak ditemukan.');
+        $p = $this->produk->find($id);
+        if (!$p) {
+            return redirect()->back()->with('error', 'Produk tidak ditemukan.');
         }
-        if (! $this->produk->update($id, $this->collectProdukInput($id))) {
-            return redirect()->back()->withInput()
-                ->with('errors', $this->produk->errors());
-        }
-        return redirect()->to('/admin/produk')->with('message', 'Produk berhasil diperbarui.');
+
+        $data = [
+            'nama'         => $this->request->getPost('nama'),
+            'kategori'     => $this->request->getPost('kategori'),
+            'harga'        => (float) $this->request->getPost('harga'),
+            'status_aktif' => $this->request->getPost('status_aktif') ? 1 : 0,
+        ];
+
+        $this->produk->update($id, $data);
+
+        return redirect()->to('/admin/produk')->with('success', 'Produk berhasil diperbarui.');
     }
 
     public function delete(int $id)
     {
-        if ($this->produk->find($id)) {
-            $this->produk->delete($id);
-            return redirect()->to('/admin/produk')->with('message', 'Produk berhasil dihapus.');
-        }
-        return redirect()->to('/admin/produk')->with('error', 'Produk tidak ditemukan.');
+        $this->produk->delete($id);
+        return redirect()->to('/admin/produk')->with('success', 'Produk berhasil dihapus.');
     }
 
-    public function storeVarian(int $produkId)
+    public function toggleStatus(int $id)
     {
-        $produk = $this->produk->find($produkId);
-        if (! $produk) {
-            return redirect()->to('/admin/produk')->with('error', 'Produk tidak ditemukan.');
+        $p = $this->produk->find($id);
+        if ($p) {
+            $newStatus = $p['status_aktif'] ? 0 : 1;
+            $this->produk->update($id, ['status_aktif' => $newStatus]);
         }
-        $nama = trim((string) $this->request->getPost('nama_varian'));
-        if ($nama === '') {
-            return redirect()->back()->with('error', 'Nama varian wajib diisi.');
-        }
-        $this->varian->insert(['produk_id' => $produkId, 'nama_varian' => $nama]);
-        return redirect()->to('/admin/produk/edit/' . $produkId)
-            ->with('message', 'Varian berhasil ditambahkan.');
-    }
-
-    public function deleteVarian(int $produkId, int $varianId)
-    {
-        $varian = $this->varian->find($varianId);
-        if ($varian && (int) $varian['produk_id'] === $produkId) {
-            $this->varian->delete($varianId);
-        }
-        return redirect()->to('/admin/produk/edit/' . $produkId)
-            ->with('message', 'Varian berhasil dihapus.');
-    }
-
-    private function collectProdukInput(?int $id = null): array
-    {
-        $harga = (string) $this->request->getPost('harga');
-        $harga = (float) str_replace([',', ' '], ['.', ''], $harga);
-
-        return [
-            'nama'        => trim((string) $this->request->getPost('nama')),
-            'kategori'    => (string) $this->request->getPost('kategori'),
-            'harga'       => $harga,
-            'status_aktif'=> (int) ($this->request->getPost('status_aktif') ? 1 : 0),
-        ];
+        return redirect()->back()->with('success', 'Status ketersediaan produk berhasil diubah.');
     }
 }

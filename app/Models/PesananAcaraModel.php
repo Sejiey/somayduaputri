@@ -8,7 +8,7 @@ class PesananAcaraModel extends Model
 {
     protected $table            = 'pesanan_acara';
     protected $primaryKey       = 'id';
-    protected $returnType        = 'array';
+    protected $returnType       = 'array';
     protected $useTimestamps    = true;
     protected $createdField     = 'created_at';
     protected $updatedField     = 'updated_at';
@@ -18,15 +18,16 @@ class PesananAcaraModel extends Model
         'pembeli_id',
         'nama_pemesan',
         'nomor_hp',
-        'jenis_acara',
-        'nama_acara',
+        'metode_pengambilan',
+        'alamat',
+        'patokan_maxim',
+        'alamat_lat',
+        'alamat_lng',
         'tanggal_acara',
-        'lokasi_acara',
-        'estimasi_porsi',
         'catatan',
         'subtotal',
-        'biaya_stand',
         'total',
+        'snap_token',
         'status_pembayaran',
         'status_followup',
     ];

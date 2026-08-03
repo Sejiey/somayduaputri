@@ -129,3 +129,6 @@ _modules/*
 # UI/UX Pro Max skills (installed via `npx uipro init`) — local tooling only,
 # tidak dibagikan via repo. Anggota tim bisa install sendiri bila perlu.
 .claude/skills/
+
+# Archived duplicate folder
+_ARSIP_DUPLIKAT_JANGAN_DIPAKAI/

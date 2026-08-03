@@ -133,13 +133,13 @@ class CartService
             ];
         }
         session()->set(self::SESSION_KEY, $cart);
-        $minOrder = (float) ($pengaturanModel->getSingleton()['minimum_order'] ?? 100000);
+        $minOrder = (float) ($pengaturanModel->getSingleton()['minimum_order'] ?? 50000);
         return [
-            'rows'      => $rows,
-            'total'     => $total,
-            'minOrder'  => $minOrder,
+            'rows'        => $rows,
+            'total'       => $total,
+            'minOrder'    => $minOrder,
             'canCheckout' => $total >= $minOrder && count($rows) > 0,
-            'kekurangan' => max(0.0, $minOrder - $total),
+            'kekurangan'  => max(0.0, $minOrder - $total),
         ];
     }
 }

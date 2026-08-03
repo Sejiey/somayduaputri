@@ -122,16 +122,43 @@
 
         <!-- DETAIL PESANAN -->
         <h3 class="section-title" style="margin-top: 0;">Detail Pesanan</h3>
+        <?php 
+            $curLokasi  = session('checkout_lokasi') ?? $lokasi ?? 'Undata';
+            $curMetode  = session('checkout_metode') ?? $metode ?? 'diantar';
+            $curRuangan = session('checkout_ruangan') ?? $ruangan ?? '';
+            $curAlamat  = session('checkout_alamat') ?? $alamat ?? '';
+            
+            $metodeLabel = 'Ambil Sendiri';
+            if ($curMetode === 'diantar') {
+                $metodeLabel = ($curLokasi === 'Undata') ? 'Diantar (Fee Rp5.000)' : 'Diantar via Maxim';
+            }
+            $lokasiLabel = ($curLokasi === 'Undata') ? 'Area RSUD Undata' : 'Luar Area (Lainnya)';
+        ?>
         <div class="info-row">
             <span class="info-label">Tanggal Pesanan</span>
-            <span class="info-value"><?= esc($sessionData['tanggal_dibutuhkan'] ?? $tanggal ?? '-') ?></span>
+            <span class="info-value"><?= date('d F Y') ?> (Hari ini)</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Lokasi</span>
+            <span class="info-value"><?= esc($lokasiLabel) ?></span>
         </div>
         <div class="info-row">
             <span class="info-label">Metode Penerimaan</span>
-            <span class="info-value">
-                <?= ((isset($sessionData['metode']) && $sessionData['metode'] === 'diantar') || ($metode ?? '') === 'diantar') ? 'Diantar via Maxim' : 'Ambil Sendiri' ?>
-            </span>
+            <span class="info-value"><?= esc($metodeLabel) ?></span>
         </div>
+        <?php if ($curMetode === 'diantar'): ?>
+            <?php if ($curLokasi === 'Undata'): ?>
+                <div class="info-row">
+                    <span class="info-label">Ruangan</span>
+                    <span class="info-value"><?= esc($curRuangan !== '' ? $curRuangan : '-') ?></span>
+                </div>
+            <?php else: ?>
+                <div class="info-row">
+                    <span class="info-label">Alamat</span>
+                    <span class="info-value"><?= esc($curAlamat !== '' ? $curAlamat : '-') ?></span>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
         <div class="info-row">
             <span class="info-label">Catatan</span>
             <span class="info-value" style="font-weight: 400;">
@@ -182,13 +209,19 @@
                 <span>Rp<?= number_format($subtotal ?? 0, 0, ',', '.') ?></span>
             </div>
             <div class="calc-row">
-                <span>Ongkir Maxim</span>
-                <span style="color: var(--text-muted); font-weight: 400;">Ditentukan Kurir</span>
+                <span>Ongkir</span>
+                <?php if ($curMetode === 'diantar' && $curLokasi === 'Undata'): ?>
+                    <span>Rp<?= number_format($ongkir ?? 5000, 0, ',', '.') ?></span>
+                <?php elseif ($curMetode === 'diantar'): ?>
+                    <span style="color: var(--text-muted); font-weight: 400;">Rp0 (Dibayar langsung ke kurir Maxim)</span>
+                <?php else: ?>
+                    <span>Rp0</span>
+                <?php endif; ?>
             </div>
 
             <div class="calc-total">
                 <span>Total Pembayaran</span>
-                <span class="total-price">Rp<?= number_format($subtotal ?? 0, 0, ',', '.') ?></span>
+                <span class="total-price">Rp<?= number_format($total ?? $grandTotal ?? ($subtotal + ($ongkir ?? 0)), 0, ',', '.') ?></span>
             </div>
         </div>
 

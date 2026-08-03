@@ -22,10 +22,9 @@ class Pengaturan extends BaseController
 
     public function save()
     {
-        $pajakAktif  = $this->request->getPost('pajak_aktif') === '1' ? 1 : 0;
-        $pajakPersen = (float) $this->request->getPost('pajak_persen');
+        $pajakAktif   = $this->request->getPost('pajak_aktif') === '1' ? 1 : 0;
+        $pajakPersen  = (float) $this->request->getPost('pajak_persen');
         $minimumOrder = (float) $this->request->getPost('minimum_order');
-        $biayaStand   = (float) $this->request->getPost('biaya_stand');
         $alamatUmkm   = trim((string) $this->request->getPost('alamat_umkm'));
         $jamBuka      = (string) $this->request->getPost('jam_buka');
         $jamTutup     = (string) $this->request->getPost('jam_tutup');
@@ -36,18 +35,14 @@ class Pengaturan extends BaseController
         if ($minimumOrder < 0) {
             return redirect()->back()->withInput()->with('error', 'Minimum order tidak boleh negatif.');
         }
-        if ($biayaStand < 0) {
-            return redirect()->back()->withInput()->with('error', 'Biaya stand tidak boleh negatif.');
-        }
 
         $data = [
-            'pajak_aktif'    => $pajakAktif,
-            'pajak_persen'   => $pajakPersen,
-            'minimum_order'  => $minimumOrder,
-            'biaya_stand'    => $biayaStand,
-            'alamat_umkm'    => $alamatUmkm,
-            'jam_buka'       => $jamBuka !== '' ? $jamBuka : null,
-            'jam_tutup'      => $jamTutup !== '' ? $jamTutup : null,
+            'pajak_aktif'   => $pajakAktif,
+            'pajak_persen'  => $pajakPersen,
+            'minimum_order' => $minimumOrder,
+            'alamat_umkm'   => $alamatUmkm,
+            'jam_buka'      => $jamBuka !== '' ? $jamBuka : null,
+            'jam_tutup'     => $jamTutup !== '' ? $jamTutup : null,
         ];
 
         $row = $this->pengaturan->first();

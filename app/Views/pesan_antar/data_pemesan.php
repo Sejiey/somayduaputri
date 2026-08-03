@@ -55,7 +55,8 @@
             </div>
 
             <?php 
-                $metode = session('temp_order')['metode'] ?? session('metode') ?? session('checkout_metode') ?? 'diantar'; 
+                $metode = session('checkout_metode') ?? session('metode') ?? session('temp_order')['metode'] ?? 'diantar'; 
+                $lokasi = session('checkout_lokasi') ?? session('lokasi') ?? 'Undata';
             ?>
             
             <?php if($metode == 'ambil_sendiri'): ?>
@@ -69,9 +70,14 @@
                     <!-- Link Google Maps menggunakan parameter query alamat akurat -->
                     <a href="https://www.google.com/maps/search/?api=1&query=Jl.+Rinda+Permai,+Kec.+Mantikulore,+Kota+Palu,+Sulawesi+Tengah+94119" target="_blank" class="btn-maps-link">Buka Navigasi di Google Maps</a>
                 </div>
+            <?php elseif($lokasi == 'Undata'): ?>
+                <div class="form-group">
+                    <label class="form-label">Ruangan *</label>
+                    <input type="text" id="inputRuangan" name="ruangan" class="form-control" placeholder="Contoh: Ruang Anggrek Lt. 2" required value="<?= esc(old('ruangan') ?? session('temp_biodata')['ruangan'] ?? session('checkout_ruangan') ?? '') ?>">
+                </div>
             <?php else: ?>
                 <div class="form-group">
-                    <label class="form-label">Alamat Lengkap * (Ketik untuk mencari)</label>
+                    <label class="form-label">Alamat Lengkap / Patokan * (Ketik untuk mencari)</label>
                     <input type="text" id="inputAlamat" name="alamat" class="form-control" placeholder="Ketik nama jalan/daerah di Palu..." autocomplete="off" required value="<?= esc(old('alamat') ?? session('temp_biodata')['alamat'] ?? session('checkout_alamat') ?? '') ?>">
                     <div id="saranWadah" class="saran-lokasi"></div>
                 </div>
@@ -88,64 +94,83 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const isAmbilSendiri = <?= $metode == 'ambil_sendiri' ? 'true' : 'false' ?>;
+        const isUndata       = <?= ($metode != 'ambil_sendiri' && $lokasi == 'Undata') ? 'true' : 'false' ?>;
         
-        // Koordinat Spesifik Jl. Rinda Permai, Mantikulore (Ambil Sendiri)
-        const defaultLat = isAmbilSendiri ? -0.8872 : (parseFloat("<?= esc(session('temp_biodata')['koordinat_lat'] ?? session('checkout_alamat_lat') ?? '-0.8917') ?>") || -0.8917);
-        const defaultLng = isAmbilSendiri ? 119.8975 : (parseFloat("<?= esc(session('temp_biodata')['koordinat_lng'] ?? session('checkout_alamat_lng') ?? '119.8707') ?>") || 119.8707);
+        // Map initialization if map container exists
+        if (document.getElementById('map')) {
+            const defaultLat = isAmbilSendiri ? -0.8872 : (parseFloat("<?= esc(session('temp_biodata')['koordinat_lat'] ?? session('checkout_alamat_lat') ?? '-0.8917') ?>") || -0.8917);
+            const defaultLng = isAmbilSendiri ? 119.8975 : (parseFloat("<?= esc(session('temp_biodata')['koordinat_lng'] ?? session('checkout_alamat_lng') ?? '119.8707') ?>") || 119.8707);
 
-        let map = L.map('map').setView([defaultLat, defaultLng], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            let map = L.map('map').setView([defaultLat, defaultLng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        let marker = L.marker([defaultLat, defaultLng], {draggable: !isAmbilSendiri}).addTo(map);
+            let marker = L.marker([defaultLat, defaultLng], {draggable: (!isAmbilSendiri && !isUndata)}).addTo(map);
 
-        function updateCoord(lat, lng) {
-            document.getElementById('lat-val').value = lat;
-            document.getElementById('lng-val').value = lng;
-        }
-        
-        if(!isAmbilSendiri) {
-            marker.on('dragend', function(e) {
-                let pos = marker.getLatLng();
-                updateCoord(pos.lat, pos.lng);
-            });
-        }
-        updateCoord(defaultLat, defaultLng);
+            function updateCoord(lat, lng) {
+                const latEl = document.getElementById('lat-val');
+                const lngEl = document.getElementById('lng-val');
+                if (latEl) latEl.value = lat;
+                if (lngEl) lngEl.value = lng;
+            }
+            
+            if (!isAmbilSendiri && !isUndata) {
+                marker.on('dragend', function(e) {
+                    let pos = marker.getLatLng();
+                    updateCoord(pos.lat, pos.lng);
+                    
+                    // Reverse Geocoding dengan Nominatim
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}&addressdetails=1`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data && data.display_name) {
+                                const inputAlamat = document.getElementById('inputAlamat');
+                                if (inputAlamat) {
+                                    inputAlamat.value = data.display_name;
+                                }
+                            }
+                        })
+                        .catch(err => console.error('Reverse geocoding error:', err));
+                });
+            }
+            updateCoord(defaultLat, defaultLng);
 
-        // AUTOCMPLETE DENGAN BATASAN WILAYAH PALU
-        if(!isAmbilSendiri) {
-            const inputAlamat = document.getElementById('inputAlamat');
-            const saranWadah = document.getElementById('saranWadah');
-            let timeout = null;
+            // AUTOCOMPLETE DENGAN BATASAN WILAYAH PALU
+            if (!isAmbilSendiri && !isUndata) {
+                const inputAlamat = document.getElementById('inputAlamat');
+                const saranWadah = document.getElementById('saranWadah');
+                let timeout = null;
 
-            inputAlamat.addEventListener('input', function() {
-                clearTimeout(timeout);
-                let q = this.value;
-                if(q.length < 4) { saranWadah.style.display = 'none'; return; }
-                
-                timeout = setTimeout(() => {
-                    // Bounding Box untuk area Palu agar hasil lebih akurat
-                    const viewbox = "119.7800,-0.9500,119.9500,-0.8000"; 
-                    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=id&viewbox=${viewbox}&bounded=1`)
-                    .then(res => res.json())
-                    .then(data => {
-                        let html = '';
-                        data.forEach(item => {
-                            let cleanName = item.display_name.replace(/'/g, "\\'");
-                            html += `<div class="saran-item" onclick="pilihLokasi(${item.lat}, ${item.lon}, '${cleanName}')">${item.display_name}</div>`;
-                        });
-                        saranWadah.innerHTML = html;
-                        saranWadah.style.display = data.length > 0 ? 'block' : 'none';
+                if (inputAlamat && saranWadah) {
+                    inputAlamat.addEventListener('input', function() {
+                        clearTimeout(timeout);
+                        let q = this.value;
+                        if(q.length < 4) { saranWadah.style.display = 'none'; return; }
+                        
+                        timeout = setTimeout(() => {
+                            const viewbox = "119.7800,-0.9500,119.9500,-0.8000"; 
+                            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=id&viewbox=${viewbox}&bounded=1`)
+                            .then(res => res.json())
+                            .then(data => {
+                                let html = '';
+                                data.forEach(item => {
+                                    let cleanName = item.display_name.replace(/'/g, "\\'");
+                                    html += `<div class="saran-item" onclick="pilihLokasi(${item.lat}, ${item.lon}, '${cleanName}')">${item.display_name}</div>`;
+                                });
+                                saranWadah.innerHTML = html;
+                                saranWadah.style.display = data.length > 0 ? 'block' : 'none';
+                            });
+                        }, 600);
                     });
-                }, 600);
-            });
 
-            window.pilihLokasi = function(lat, lng, nama) {
-                inputAlamat.value = nama;
-                saranWadah.style.display = 'none';
-                map.setView([lat, lng], 17);
-                marker.setLatLng([lat, lng]);
-                updateCoord(lat, lng);
-            };
+                    window.pilihLokasi = function(lat, lng, nama) {
+                        inputAlamat.value = nama;
+                        saranWadah.style.display = 'none';
+                        map.setView([lat, lng], 17);
+                        marker.setLatLng([lat, lng]);
+                        updateCoord(lat, lng);
+                    };
+                }
+            }
         }
 
         // VALIDASI WHATSAPP
@@ -153,7 +178,6 @@
             const waInput = document.getElementById('inputWa').value.replace(/\s|-/g, '');
             const waError = document.getElementById('waError');
             
-            // Regex: Diawali 08 atau +628, panjang total digit angka (tanpa +) adalah 11-12.
             const waRegex = /^(08|\+628)[0-9]{8,10}$/;
 
             if (!waRegex.test(waInput)) {

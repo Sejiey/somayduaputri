@@ -11,7 +11,7 @@ class ProdukModel extends Model
     protected $returnType     = 'array';
     protected $useTimestamps = false;
     protected $useSoftDeletes = false;
-    protected $allowedFields  = ['nama', 'kategori', 'harga', 'status_aktif'];
+    protected $allowedFields  = ['nama', 'kategori', 'harga', 'status_aktif', 'tampil_di_pesan_antar'];
 
     protected $validationRules = [
         'nama'        => 'required|max_length[255]',

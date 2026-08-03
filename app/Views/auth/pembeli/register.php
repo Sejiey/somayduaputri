@@ -313,7 +313,7 @@
         <?php endif; ?>
 
         <!-- Form Daftar -->
-        <form method="post" action="<?= base_url('daftar') ?>" novalidate>
+        <form method="post" action="<?= base_url('daftar') ?>" autocomplete="off" novalidate>
             <?= csrf_field() ?>
             
             <!-- Hidden Redirect -->
@@ -325,7 +325,7 @@
                 <label for="nama">Nama Lengkap</label>
                 <div class="input-wrapper">
                     <span class="material-symbols-outlined">person</span>
-                    <input type="text" id="nama" name="nama" value="<?= esc(old('nama')) ?>" placeholder="Masukkan nama lengkap" required maxlength="255">
+                    <input type="text" id="nama" name="nama" value="" placeholder="Masukkan nama lengkap" autocomplete="off" required maxlength="255">
                 </div>
             </div>
 
@@ -333,20 +333,7 @@
                 <label for="email">Email</label>
                 <div class="input-wrapper">
                     <span class="material-symbols-outlined">mail</span>
-                    <?php 
-                        $hasEmailTakenErr = false;
-                        $fieldErrs = session()->getFlashdata('errors');
-                        if (!empty($fieldErrs) && is_array($fieldErrs)) {
-                            foreach ($fieldErrs as $err) {
-                                if (str_contains(strtolower($err), 'terdaftar')) {
-                                    $hasEmailTakenErr = true;
-                                    break;
-                                }
-                            }
-                        }
-                        $emailVal = $hasEmailTakenErr ? '' : old('email');
-                    ?>
-                    <input type="email" id="email" name="email" value="<?= esc($emailVal) ?>" placeholder="Masukkan email Anda" required maxlength="255">
+                    <input type="email" id="email" name="email" value="" placeholder="Masukkan email Anda" autocomplete="off" required maxlength="255">
                 </div>
             </div>
 
@@ -354,7 +341,7 @@
                 <label for="password">Kata Sandi</label>
                 <div class="input-wrapper">
                     <span class="material-symbols-outlined">lock</span>
-                    <input type="password" id="password" name="password" placeholder="Buat kata sandi" required minlength="6">
+                    <input type="password" id="password" name="password" value="" placeholder="Buat kata sandi" autocomplete="new-password" required minlength="6">
                     <button type="button" class="btn-eye" onclick="togglePassword('password', 'eye-icon-1')">
                         <span class="material-symbols-outlined" id="eye-icon-1">visibility_off</span>
                     </button>
@@ -365,7 +352,7 @@
                 <label for="password_confirm">Konfirmasi Kata Sandi</label>
                 <div class="input-wrapper">
                     <span class="material-symbols-outlined">lock</span>
-                    <input type="password" id="password_confirm" name="password_confirm" placeholder="Ulangi kata sandi" required minlength="6">
+                    <input type="password" id="password_confirm" name="password_confirm" value="" placeholder="Ulangi kata sandi" autocomplete="new-password" required minlength="6">
                     <button type="button" class="btn-eye" onclick="togglePassword('password_confirm', 'eye-icon-2')">
                         <span class="material-symbols-outlined" id="eye-icon-2">visibility_off</span>
                     </button>
@@ -373,7 +360,7 @@
             </div>
 
             <div class="checkbox-group">
-                <input type="checkbox" id="terms" name="terms" value="1" required>
+                <input type="checkbox" id="terms" name="terms" value="1">
                 <label for="terms">Saya setuju dengan <a href="<?= base_url('syarat-ketentuan') ?>" target="_blank">Syarat & Ketentuan</a></label>
             </div>
 
@@ -382,7 +369,7 @@
 
         <div class="divider">atau</div>
 
-        <button type="button" class="btn-google">
+        <button type="button" class="btn-google" onclick="window.location.href='<?= base_url('auth/google') ?>'">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -410,6 +397,21 @@
                 icon.textContent = 'visibility_off';
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const clearInputs = function() {
+                const inputs = document.querySelectorAll('form input:not([type="hidden"])');
+                inputs.forEach(input => {
+                    if (input.type === 'checkbox') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                });
+            };
+            clearInputs();
+            window.addEventListener('pageshow', clearInputs);
+        });
     </script>
 </body>
 </html>

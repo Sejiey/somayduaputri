@@ -40,7 +40,7 @@
                     </a>
                     <a href="<?= base_url('pesan-stand/tentang') ?>" class="btn-hero solid">
                         <div class="icon-wrap"><span class="material-symbols-outlined">storefront</span></div>
-                        <span class="text-btn">PESAN PORSI<br><strong>Besar</strong></span>
+                        <span class="text-btn">PESAN UNTUK<br><strong>Acara</strong></span>
                     </a>
                 </div>
             </div>
@@ -175,7 +175,7 @@
                     <img src="<?= base_url('assets/img/maxim.png') ?>" alt="Maxim Delivery" class="service-img maxim-img">
                     <div class="service-info">
                         <h3>Pesan Antar</h3>
-                        <p>Pesan menu favorit Anda untuk dikirim hari ini. Gratis antar ke ruangan area Undata, atau kirim via Maxim untuk luar area.</p>
+                        <p>Pesan menu favorit Anda untuk dikirim hari ini. Antar langsung ke ruangan area Undata, atau kirim via Maxim untuk luar area.</p>
                         <span class="courier-note">Pengantaran via maxim <span class="badge-maxim">maxim</span></span>
                         <a href="<?= base_url('pesan-antar') ?>" class="btn-service">Pesan Antar</a>
                     </div>
@@ -184,7 +184,7 @@
                 <div class="service-card">
                     <img src="<?= base_url('assets/img/stand.png') ?>" alt="Pesan Porsi Besar" class="service-img stand-img">
                     <div class="service-info">
-                        <h3>Pesan Porsi Besar</h3>
+                        <h3>Pesan Untuk Acara</h3>
                         <p>Melayani pesanan dalam jumlah banyak untuk berbagai acara Anda. Pembayaran praktis, opsi pengiriman via Maxim atau ambil sendiri.</p>
                         <a href="<?= base_url('pesan-stand/tentang') ?>" class="btn-service mt-auto">Atur Tanggal</a>
                     </div>
@@ -213,7 +213,6 @@
         --t-smooth: all 0.3s ease;
     }
 
-    /* GLOBAL WARNA DIKEMBALIKAN KE PUTIH AGAR TENGAH TETAP PUTIH */
     .landing-page-wrapper {
         background-color: var(--c-white);
         overflow-x: hidden;
@@ -238,7 +237,7 @@
     /* 1. HERO SECTION (BACKGROUND UNGU POLA) */
     .hero-premium {
         position: relative;
-        padding: 120px 0 160px; /* Padding bawah ditambah dari 80px ke 160px agar ungu turun ke bawah */
+        padding: 120px 0 160px;
         background-color: var(--c-primary-soft);
         background-image: url('<?= base_url("bg.png") ?>');
         background-size: cover;
@@ -403,37 +402,63 @@
     .delay-1 { animation-delay: 0.2s; }
     @keyframes fadeUpAnim { to { opacity: 1; transform: translateY(0); } }
 
-    /* RESPONSIVE (HP & TABLET) */
+    /* RESPONSIVE (HP & TABLET) - PERBAIKAN SPACING DAN UKURAN */
     @media (max-width: 1024px) {
         .container { padding: 0 24px; }
         .hero-grid, .features-grid { grid-template-columns: 1fr; text-align: center; }
         .hero-content { align-items: center; display: flex; flex-direction: column; }
         
-        .hero-title { font-size: 2.5rem; }
-        .hero-desc { font-size: 0.95rem; text-align: center; }
+        .section-title { font-size: 1.5rem; margin-bottom: 1.5rem; }
+        
+        .hero-title { font-size: 2.2rem; }
+        .hero-desc { font-size: 0.85rem; text-align: center; margin-bottom: 24px; max-width: 320px; }
         
         .hero-buttons { 
-            display: flex; flex-direction: row; flex-wrap: nowrap; 
-            justify-content: space-between; gap: 8px; width: 100%; max-width: 420px;
+            display: flex; flex-direction: row; flex-wrap: wrap; 
+            justify-content: center; gap: 10px; width: 100%;
         }
         .btn-hero { 
-            flex-direction: column; padding: 10px 4px; text-align: center; 
-            flex: 1; font-size: 0.65rem; justify-content: center;
+            flex-direction: row; padding: 8px 14px; text-align: left; 
+            flex: unset; width: auto; font-size: 0.75rem; justify-content: center;
         }
-        .btn-hero .icon-wrap { margin-bottom: 6px; }
+        .btn-hero .icon-wrap { margin-bottom: 0; margin-right: 8px; }
+        .btn-hero .material-symbols-outlined { font-size: 22px; }
 
-        .hero-visual { justify-content: center; margin-top: 40px; padding-right: 0; }
-        .hero-composition { max-width: 320px; height: 350px; margin: 0 auto 60px; }
-        .float-1 { width: 180px; bottom: -30px; right: 60px; }
-        .float-2 { width: 130px; bottom: 10px; right: -10px; }
-        .float-3 { width: 80px; bottom: 50px; right: -20px; transform: rotate(12deg); }
+        /* PERBAIKAN 1: Background ungu dipotong agar berhenti pas di bawah foto gerobak */
+        .hero-premium { padding: 100px 0 40px; }
         
-        .features-cards { grid-template-columns: 1fr 1fr; }
-        .feature-main-img { max-width: 250px; }
+        /* PERBAIKAN 2: Posisi gambar melayang agar tidak menutupi teks/tombol */
+        .hero-visual { justify-content: center; margin-top: 20px; padding-right: 0; }
+        .hero-composition { max-width: 260px; height: 280px; margin: 0 auto 30px; }
+        .float-1 { width: 130px; bottom: -10px; right: 40px; }
+        .float-2 { width: 100px; bottom: 10px; right: -10px; }
+        .float-3 { width: 60px; bottom: 30px; right: -10px; transform: rotate(12deg); }
         
-        .services-grid { grid-template-columns: 1fr; }
-        .service-card { flex-direction: column; align-items: center; text-align: center; }
-        .btn-service { align-self: center; }
+        /* PERBAIKAN 3: Jarak dan ukuran mangkok siomay dikurangi */
+        .features-section { padding: 40px 0 40px; }
+        .features-cards { grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .feature-card { padding: 16px 12px; }
+        .feature-icon-wrapper { width: 45px; height: 45px; margin: 0 auto 10px; }
+        .feature-icon-wrapper::after { width: 32px; height: 32px; }
+        .feature-icon-wrapper .material-symbols-outlined { font-size: 20px; }
+        .feature-card h4 { font-size: 0.85rem; }
+        .feature-card p { font-size: 0.75rem; }
+        
+        .features-visual { margin-top: 20px; }
+        .feature-main-img { max-width: 180px; margin-top: 10px; } /* Mangkok lebih kecil */
+        .purple-blob { width: 250px; height: 250px; right: -20px; }
+        
+        .menu-img-wrapper { width: 130px; height: 130px; }
+        .menu-name { font-size: 0.9rem; }
+        
+        /* PERBAIKAN 4: Kotak layanan diperkecil agar tidak raksasa */
+        .services-section { padding: 50px 0 60px; }
+        .services-grid { grid-template-columns: 1fr; gap: 12px; }
+        .service-card { flex-direction: column; align-items: center; text-align: center; padding: 16px 12px; gap: 10px; }
+        .service-img { width: 55px; height: 55px; } /* Ikon layanan lebih kecil */
+        .service-info h3 { font-size: 0.9rem; margin-bottom: 4px; }
+        .service-info p { font-size: 0.7rem; margin-bottom: 8px; }
+        .btn-service { align-self: center; font-size: 0.7rem; padding: 6px 12px; margin-top: 0; }
     }
 </style>
 
