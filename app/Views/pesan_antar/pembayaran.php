@@ -284,11 +284,10 @@
 
                     snap.pay(snapToken, {
                         onSuccess: function (result) {
-                            // Mengarah ke route konfirmasi-bayar setelah route ditambahkan di Routes.php
                             window.location.href = '<?= base_url('pesan-antar/konfirmasi-bayar/') ?>' + kodePesanan;
                         },
                         onPending: function (result) {
-                            window.location.href = '<?= base_url('pesan-antar/konfirmasi-bayar/') ?>' + kodePesanan;
+                            console.log("Snap pending:", result);
                         },
                         onError: function (result) {
                             alert('Pembayaran gagal, silakan coba lagi.');
@@ -299,6 +298,20 @@
                     });
                 });
             }
+
+            // Polling otomatis tiap 2 detik untuk deteksi pembayaran lunas di Simulator Midtrans
+            setInterval(function() {
+                if (kodePesanan) {
+                    fetch('<?= base_url('pesan-antar/cek-status/') ?>' + kodePesanan)
+                        .then(response => response.json())
+                        .then(res => {
+                            if (res.ok && res.data && res.data.status === 'lunas') {
+                                window.location.href = '<?= base_url('pesan-antar/berhasil/') ?>' + kodePesanan;
+                            }
+                        })
+                        .catch(err => console.error("Error polling status:", err));
+                }
+            }, 2000);
         });
     </script>
 

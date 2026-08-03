@@ -97,8 +97,26 @@ class ProdukAdmin extends BaseController
 
     public function delete(int $id)
     {
+        $db = \Config\Database::connect();
+        
+        // Disable FK checks temporarily for physical deletion
+        $db->query('SET FOREIGN_KEY_CHECKS=0;');
+        
+        if ($db->tableExists('item_pesanan_acara')) {
+            $db->table('item_pesanan_acara')->where('produk_id', $id)->delete();
+        }
+        if ($db->tableExists('item_pesanan')) {
+            $db->table('item_pesanan')->where('produk_id', $id)->delete();
+        }
+        if ($db->tableExists('varian_produk')) {
+            $db->table('varian_produk')->where('produk_id', $id)->delete();
+        }
+        
         $this->produk->delete($id);
-        return redirect()->to('/admin/produk')->with('success', 'Produk berhasil dihapus.');
+        
+        $db->query('SET FOREIGN_KEY_CHECKS=1;');
+
+        return redirect()->back()->with('success', 'Produk berhasil dihapus secara permanen dari etalase.');
     }
 
     public function toggleStatus(int $id)

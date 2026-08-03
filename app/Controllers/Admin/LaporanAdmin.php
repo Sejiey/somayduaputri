@@ -23,14 +23,14 @@ class LaporanAdmin extends BaseController
         // 1. Total Metrics
         $revAntarRow = $this->db->table('pesanan')
             ->selectSum('total')
-            ->where('status', 'lunas')
+            ->whereNotIn('status', ['pending', 'batal', 'gagal'])
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->get()->getRow();
 
         $revAcaraRow = $this->db->table('pesanan_acara')
             ->selectSum('total')
-            ->where('status_pembayaran', 'lunas')
+            ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->get()->getRow();
@@ -52,13 +52,13 @@ class LaporanAdmin extends BaseController
         $labaBersih = $totalPendapatan - $pengeluaranTotal;
 
         $countAntar = $this->db->table('pesanan')
-            ->where('status', 'lunas')
+            ->whereNotIn('status', ['pending', 'batal', 'gagal'])
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->countAllResults();
 
         $countAcara = $this->db->table('pesanan_acara')
-            ->where('status_pembayaran', 'lunas')
+            ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->countAllResults();
@@ -74,70 +74,74 @@ class LaporanAdmin extends BaseController
 
             $sum1 = $this->db->table('pesanan')
                 ->selectSum('total')
-                ->where('status', 'lunas')
+                ->whereNotIn('status', ['pending', 'batal', 'gagal'])
                 ->where('DATE(created_at)', $d)
                 ->get()->getRow()->total ?? 0;
 
             $sum2 = $this->db->table('pesanan_acara')
                 ->selectSum('total')
-                ->where('status_pembayaran', 'lunas')
+                ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
                 ->where('DATE(created_at)', $d)
                 ->get()->getRow()->total ?? 0;
 
             $chartData[] = (float)($sum1 + $sum2);
         }
 
-        // 3. Rincian Table Data
+        // 3. Rincian Table Data (Dynamic based on selected $dari and $sampai date range)
         $rincian = [];
-        // Group by Date for summary table
-        for ($i = 0; $i < 7; $i++) {
-            $d = date('Y-m-d', strtotime("-$i days"));
+        $startDate = strtotime($dari);
+        $endDate   = strtotime($sampai);
 
-            $rev1 = $this->db->table('pesanan')
-                ->selectSum('total')
-                ->where('status', 'lunas')
-                ->where('DATE(created_at)', $d)
-                ->get()->getRow()->total ?? 0;
+        if ($startDate && $endDate && $endDate >= $startDate) {
+            for ($time = $endDate; $time >= $startDate; $time -= 86400) {
+                $d = date('Y-m-d', $time);
 
-            $cnt1 = $this->db->table('pesanan')
-                ->where('status', 'lunas')
-                ->where('DATE(created_at)', $d)
-                ->countAllResults();
+                $rev1 = $this->db->table('pesanan')
+                    ->selectSum('total')
+                    ->whereNotIn('status', ['pending', 'batal', 'gagal'])
+                    ->where('DATE(created_at)', $d)
+                    ->get()->getRow()->total ?? 0;
 
-            $rev2 = $this->db->table('pesanan_acara')
-                ->selectSum('total')
-                ->where('status_pembayaran', 'lunas')
-                ->where('DATE(created_at)', $d)
-                ->get()->getRow()->total ?? 0;
+                $cnt1 = $this->db->table('pesanan')
+                    ->whereNotIn('status', ['pending', 'batal', 'gagal'])
+                    ->where('DATE(created_at)', $d)
+                    ->countAllResults();
 
-            $cnt2 = $this->db->table('pesanan_acara')
-                ->where('status_pembayaran', 'lunas')
-                ->where('DATE(created_at)', $d)
-                ->countAllResults();
+                $rev2 = $this->db->table('pesanan_acara')
+                    ->selectSum('total')
+                    ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
+                    ->where('DATE(created_at)', $d)
+                    ->get()->getRow()->total ?? 0;
 
-            if ($tab === 'semua' || $tab === 'pesan_antar') {
-                if ($rev1 > 0 || $cnt1 > 0) {
-                    $rincian[] = [
-                        'tanggal'     => $d,
-                        'kategori'    => 'Pesan Antar',
-                        'pendapatan'  => $rev1,
-                        'pengeluaran' => 0,
-                        'laba'        => $rev1,
-                        'transaksi'   => $cnt1,
-                    ];
+                $cnt2 = $this->db->table('pesanan_acara')
+                    ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
+                    ->where('DATE(created_at)', $d)
+                    ->countAllResults();
+
+                if ($tab === 'semua' || $tab === 'pesan_antar') {
+                    if ($rev1 > 0 || $cnt1 > 0) {
+                        $rincian[] = [
+                            'tanggal'     => $d,
+                            'kategori'    => 'Pesan Antar',
+                            'pendapatan'  => $rev1,
+                            'pengeluaran' => 0,
+                            'laba'        => $rev1,
+                            'transaksi'   => $cnt1,
+                        ];
+                    }
                 }
-            }
 
-            if ($tab === 'semua' || $tab === 'pesan_acara') {
-                if ($rev2 > 0 || $cnt2 > 0) {
-                    $rincian[] = [
-                        'tanggal'     => $d,
-                        'kategori'    => 'Pesan Acara',
-                        'pendapatan'  => $rev2,
-                        'pengeluaran' => 0,
-                        'laba'        => $rev2,
-                        'transaksi'   => $cnt2,
-                    ];
+                if ($tab === 'semua' || $tab === 'pesan_acara') {
+                    if ($rev2 > 0 || $cnt2 > 0) {
+                        $rincian[] = [
+                            'tanggal'     => $d,
+                            'kategori'    => 'Pesan Acara',
+                            'pendapatan'  => $rev2,
+                            'pengeluaran' => 0,
+                            'laba'        => $rev2,
+                            'transaksi'   => $cnt2,
+                        ];
+                    }
                 }
             }
         }

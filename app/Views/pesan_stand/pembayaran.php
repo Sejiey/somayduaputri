@@ -172,7 +172,7 @@
                     window.location.href = "<?= base_url('pesan-stand/berhasil/' . esc($booking['kode_booking'])) ?>";
                 },
                 onPending: function (result) {
-                    window.location.href = "<?= base_url('pesan-stand/berhasil/' . esc($booking['kode_booking'])) ?>";
+                    console.log("Snap pending:", result);
                 },
                 onError: function (result) {
                     console.log("Snap payment error:", result);
@@ -180,6 +180,18 @@
             });
         }
     });
+
+    // Polling otomatis tiap 2 detik untuk deteksi pembayaran lunas di Simulator Midtrans
+    setInterval(function() {
+        fetch("<?= base_url('pesan-stand/cek-status/' . esc($booking['kode_booking'])) ?>")
+            .then(response => response.json())
+            .then(res => {
+                if (res.ok && res.data && res.data.status === 'lunas') {
+                    window.location.href = "<?= base_url('pesan-stand/berhasil/' . esc($booking['kode_booking'])) ?>";
+                }
+            })
+            .catch(err => console.error("Error polling payment status:", err));
+    }, 2000);
 </script>
 </body>
 </html>

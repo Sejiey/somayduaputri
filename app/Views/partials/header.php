@@ -197,22 +197,23 @@
         .profile-wrapper {
             position: relative;
         }
-        .profile-dropdown {
+        .profile-dropdown, .tracking-dropdown {
             position: absolute;
             top: calc(100% + 12px);
             right: 0;
             background: #ffffff;
             border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(59, 25, 143, 0.1);
-            min-width: 220px;
+            box-shadow: 0 10px 30px rgba(59, 25, 143, 0.12);
+            min-width: 250px;
             opacity: 0;
             visibility: hidden;
             transform: translateY(-10px);
             transition: all 0.2s ease;
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.06);
+            z-index: 1000;
         }
-        .profile-dropdown.show {
+        .profile-dropdown.show, .tracking-dropdown.show {
             opacity: 1;
             visibility: visible;
             transform: translateY(0);
@@ -347,17 +348,90 @@
 
             <div class="nav-action">
                 <?php if (session()->get('pembeli_id')): ?>
+                    <?php 
+                        $pembeliId = session()->get('pembeli_id');
+                        $activeOrdersCount = 0;
+                        $latestActiveOrder = null;
+
+                        if ($pembeliId) {
+                            try {
+                                $db = \Config\Database::connect();
+                                
+                                // Query pesanan (Pesan Antar)
+                                if ($db->tableExists('pesanan')) {
+                                    $antarActive = $db->table('pesanan')
+                                        ->where('pembeli_id', $pembeliId)
+                                        ->whereNotIn('status', ['selesai', 'batal'])
+                                        ->orderBy('id', 'DESC')
+                                        ->get()
+                                        ->getResultArray();
+                                    $activeOrdersCount += count($antarActive);
+                                    if (!empty($antarActive)) {
+                                        $latestActiveOrder = [
+                                            'kode' => $antarActive[0]['kode_pesanan'] ?? 'ORD-ACTIVE',
+                                            'status' => 'Lunas (Pesanan Diproses)'
+                                        ];
+                                    }
+                                }
+
+                                // Query pesan_stand_booking / pesanan_acara
+                                $standTable = $db->tableExists('pesan_stand_booking') ? 'pesan_stand_booking' : ($db->tableExists('pesanan_acara') ? 'pesanan_acara' : null);
+                                if ($standTable) {
+                                    $colStatus = ($standTable === 'pesan_stand_booking') ? 'status_pembayaran' : 'status';
+                                    $colCode   = ($standTable === 'pesan_stand_booking') ? 'kode_booking' : 'kode_pesanan';
+                                    $standActive = $db->table($standTable)
+                                        ->where('pembeli_id', $pembeliId)
+                                        ->whereNotIn($colStatus, ['selesai', 'batal', 'gagal'])
+                                        ->orderBy('id', 'DESC')
+                                        ->get()
+                                        ->getResultArray();
+                                    $activeOrdersCount += count($standActive);
+                                    if (!$latestActiveOrder && !empty($standActive)) {
+                                        $latestActiveOrder = [
+                                            'kode' => $standActive[0][$colCode] ?? 'STN-ACTIVE',
+                                            'status' => 'Lunas (Pesanan Diproses)'
+                                        ];
+                                    }
+                                }
+                            } catch (\Throwable $e) {
+                                log_message('error', 'Header tracking count error: ' . $e->getMessage());
+                            }
+                        }
+                    ?>
                     
                     <!-- Ikon Tracking / Pesanan (Hanya muncul jika sudah login) -->
-                    <a href="<?= base_url('akun/riwayat') ?>" class="icon-btn" title="Pesanan Saya">
-                        <span class="material-symbols-outlined">shopping_bag</span>
-                        <?php 
-                        $jumlah_pesanan_aktif = 0; 
-                        if ($jumlah_pesanan_aktif > 0): 
-                        ?>
-                            <span class="notif-badge"><?= $jumlah_pesanan_aktif ?></span>
-                        <?php endif; ?>
-                    </a>
+                    <div class="tracking-wrapper" style="position: relative;">
+                        <button type="button" class="icon-btn tracking-toggle" onclick="toggleTrackingMenu(event)" title="Tracking Pesanan Saya">
+                            <span class="material-symbols-outlined">shopping_bag</span>
+                            <?php if ($activeOrdersCount > 0): ?>
+                                <span class="notif-badge"><?= $activeOrdersCount ?></span>
+                            <?php endif; ?>
+                        </button>
+                        
+                        <div class="tracking-dropdown" id="trackingMenu">
+                            <div class="dropdown-header" style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px 16px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                    <span style="font-size: 0.75rem; color: #6B7280; font-weight: 600;">Status Pesanan</span>
+                                    <?php if ($activeOrdersCount > 0): ?>
+                                        <span style="font-size: 0.72rem; font-weight: 700; color: #10B981; background: #DCFCE7; padding: 2px 8px; border-radius: 12px;">Aktif (<?= $activeOrdersCount ?>)</span>
+                                    <?php else: ?>
+                                        <span style="font-size: 0.72rem; font-weight: 600; color: #6B7280; background: #F3F4F6; padding: 2px 8px; border-radius: 12px;">Tidak Ada Aktif</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="font-weight: 800; color: #3b198f; font-size: 0.88rem; margin-top: 2px;">
+                                    <?php if ($latestActiveOrder): ?>
+                                        #<?= esc($latestActiveOrder['kode']) ?> — <?= esc($latestActiveOrder['status']) ?>
+                                    <?php else: ?>
+                                        Belum Ada Pesanan Diproses
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <a href="<?= base_url('akun/riwayat') ?>" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; color: #3b198f; font-weight: 700; font-size: 0.85rem; text-decoration: none; border-top: 1px solid rgba(0,0,0,0.05); transition: background 0.2s;" onmouseover="this.style.background='#F8F5FF'" onmouseout="this.style.background='transparent'">
+                                <span>Lihat Semua Riwayat</span>
+                                <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+                            </a>
+                        </div>
+                    </div>
 
                     <!-- Ikon Profil & Dropdown Logout (Hanya muncul jika sudah login) -->
                     <div class="profile-wrapper">
@@ -400,19 +474,32 @@
     </header>
 
     <script>
+        function toggleTrackingMenu(event) {
+            event.stopPropagation();
+            const profileMenu = document.getElementById('profileMenu');
+            if (profileMenu) profileMenu.classList.remove('show');
+            const trackingMenu = document.getElementById('trackingMenu');
+            if (trackingMenu) trackingMenu.classList.toggle('show');
+        }
+
         function toggleDropdown(event) {
             event.stopPropagation();
+            const trackingMenu = document.getElementById('trackingMenu');
+            if (trackingMenu) trackingMenu.classList.remove('show');
             document.getElementById('profileMenu').classList.toggle('show');
         }
 
         window.onclick = function(event) {
             if (!event.target.closest('.profile-wrapper')) {
-                let dropdowns = document.getElementsByClassName("profile-dropdown");
-                for (let i = 0; i < dropdowns.length; i++) {
-                    let openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains('show')) {
-                        openDropdown.classList.remove('show');
-                    }
+                var dropdowns = document.getElementsByClassName("profile-dropdown");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    dropdowns[i].classList.remove('show');
+                }
+            }
+            if (!event.target.closest('.tracking-wrapper')) {
+                var trackings = document.getElementsByClassName("tracking-dropdown");
+                for (var i = 0; i < trackings.length; i++) {
+                    trackings[i].classList.remove('show');
                 }
             }
         }

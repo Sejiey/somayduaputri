@@ -171,103 +171,78 @@
 
         <h3 class="section-title" style="margin-top: 0;">Detail Pesanan</h3>
         <?php 
-            // Mengambil logic variable dari proses Pesan Antar
-            $curLokasi  = session('checkout_lokasi') ?? $lokasi ?? 'Undata';
-            $curMetode  = session('checkout_metode') ?? $metode ?? 'diantar';
-            $curRuangan = session('checkout_ruangan') ?? $ruangan ?? '';
-            $curAlamat  = session('checkout_alamat') ?? $alamat ?? '';
-            
-            $metodeLabel = 'Ambil Sendiri';
-            if ($curMetode === 'diantar') {
-                $metodeLabel = ($curLokasi === 'Undata') ? 'Diantar (Fee Rp5.000)' : 'Diantar via Maxim';
-            }
-            $lokasiLabel = ($curLokasi === 'Undata') ? 'Area RSUD Undata' : 'Luar Area (Lainnya)';
+            $metodeAcara = $orderData['metode_pengambilan'] ?? 'diantar';
+            $tglAcara    = $biodataData['tanggal_acara'] ?? date('Y-m-d');
+            $catatanText = $orderData['catatan'] ?? '';
+            $alamatAcara = $biodataData['alamat'] ?? '';
         ?>
         <div class="info-row">
-            <span class="info-label">Tanggal Pesanan</span>
-            <span class="info-value"><?= date('d F Y') ?> (Hari ini)</span>
-        </div>
-        <div class="info-row">
-            <span class="info-label">Lokasi</span>
-            <span class="info-value"><?= esc($lokasiLabel) ?></span>
+            <span class="info-label">Tanggal Acara</span>
+            <span class="info-value"><?= date('d F Y', strtotime($tglAcara)) ?></span>
         </div>
         <div class="info-row">
             <span class="info-label">Metode Penerimaan</span>
-            <span class="info-value"><?= esc($metodeLabel) ?></span>
+            <span class="info-value">
+                <?php if ($metodeAcara === 'ambil_sendiri'): ?>
+                    Ambil Sendiri (Jl. Rindai Permai Blok M No.30 — <a href="https://maps.app.goo.gl/dhxQZUKMSHdAQnNq7" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: 600;">Lihat Maps</a>)
+                <?php else: ?>
+                    Diantar via Maxim
+                <?php endif; ?>
+            </span>
         </div>
-        <?php if ($curMetode === 'diantar'): ?>
-            <?php if ($curLokasi === 'Undata'): ?>
-                <div class="info-row">
-                    <span class="info-label">Ruangan</span>
-                    <span class="info-value"><?= esc($curRuangan !== '' ? $curRuangan : '-') ?></span>
-                </div>
-            <?php else: ?>
-                <div class="info-row">
-                    <span class="info-label">Alamat</span>
-                    <span class="info-value"><?= esc($curAlamat !== '' ? $curAlamat : '-') ?></span>
-                </div>
-            <?php endif; ?>
+        <?php if ($metodeAcara === 'diantar' && !empty($alamatAcara)): ?>
+            <div class="info-row">
+                <span class="info-label">Alamat Pengantaran</span>
+                <span class="info-value"><?= esc($alamatAcara) ?></span>
+            </div>
         <?php endif; ?>
         <div class="info-row">
             <span class="info-label">Catatan</span>
             <span class="info-value" style="font-weight: 400;">
-                <?= !empty($sessionData['catatan']) ? esc($sessionData['catatan']) : (!empty($catatan) ? esc($catatan) : 'Tidak ada catatan.') ?>
+                <?= !empty($catatanText) ? esc($catatanText) : 'Tidak ada catatan.' ?>
             </span>
         </div>
 
         <h3 class="section-title">Detail Menu</h3>
         <div class="menu-list">
-            <?php if (!empty($cartItems)): ?>
-                <?php foreach ($cartItems as $item): ?>
+            <?php 
+                $itemsList = !empty($orderData['items']) ? $orderData['items'] : (!empty($cartItems) ? $cartItems : []);
+            ?>
+            <?php if (!empty($itemsList)): ?>
+                <?php foreach ($itemsList as $item): ?>
                     <?php 
-                        $namaLower = strtolower($item['nama'] ?? '');
-                        $img_name = 'menu_1.png';
-                        if (strpos($namaLower, 'lumpia') !== false) {
-                            $img_name = 'menu_2.jpeg';
-                        } elseif (strpos($namaLower, 'siomay') !== false || strpos($namaLower, 'somay') !== false) {
-                            $img_name = 'somay.png';
-                        } elseif (strpos($namaLower, 'tahu') !== false) {
-                            $img_name = 'tahu.png';
+                        $namaItem = $item['nama'] ?? ($item['produk']['nama'] ?? 'Menu');
+                        $varianNama = !empty($item['varian_nama']) ? $item['varian_nama'] : (!empty($item['nama_varian']) ? $item['nama_varian'] : 'Porsi');
+                        $namaLower = strtolower($namaItem);
+                        $img_name = !empty($item['gambar']) ? $item['gambar'] : 'somay.png';
+                        if (empty($item['gambar'])) {
+                            if (str_contains($namaLower, 'keju')) { $img_name = 'siomay_keju.jpeg'; }
+                            elseif (str_contains($namaLower, 'telur')) { $img_name = 'simay_telur.png'; }
+                            elseif (str_contains($namaLower, 'jumbo')) { $img_name = 'siomay_jumbo.jpeg'; }
+                            elseif (str_contains($namaLower, 'urat')) { $img_name = 'siomay_urat.jpeg'; }
+                            elseif (str_contains($namaLower, 'ikan')) { $img_name = 'somay_ikan.jpeg'; }
+                            elseif (str_contains($namaLower, 'batagor')) { $img_name = 'menu_4.png'; }
+                            elseif (str_contains($namaLower, 'lumpia')) { $img_name = 'menu_2.jpeg'; }
+                            elseif (str_contains($namaLower, 'es jeruk') || str_contains($namaLower, 'jeruk')) { $img_name = 'menu_5.png'; }
+                            elseif (str_contains($namaLower, 'mie')) { $img_name = 'menu_3.png'; }
+                            elseif (str_contains($namaLower, 'pentol')) { $img_name = 'pentol.jpeg'; }
+                            elseif (str_contains($namaLower, 'tahu')) { $img_name = 'tahu.png'; }
+                            elseif (str_contains($namaLower, 'nugget')) { $img_name = 'nugget.jpeg'; }
+                            elseif (str_contains($namaLower, 'sosis')) { $img_name = 'sosis.jpeg'; }
+                            elseif (str_contains($namaLower, 'siomay') || str_contains($namaLower, 'somay')) { $img_name = 'somay.png'; }
                         }
+                        $sub = $item['subtotal'] ?? (($item['harga'] ?? 0) * ($item['qty'] ?? $item['jumlah'] ?? 1));
+                        $qty = $item['qty'] ?? $item['jumlah'] ?? 1;
                     ?>
                     <div class="menu-item">
-                        <img src="<?= base_url('assets/img/' . $img_name) ?>" class="menu-img" alt="<?= esc($item['nama'] ?? 'Menu') ?>" onerror="this.src='https://placehold.co/100x100?text=Menu'">
+                        <img src="<?= base_url('assets/img/' . $img_name) ?>" class="menu-img" alt="<?= esc($namaItem) ?>" onerror="this.src='https://placehold.co/100x100?text=Menu'">
                         <div class="menu-details">
-                            <div class="menu-name"><?= esc($item['nama'] ?? 'Menu') ?></div>
-                            <div class="menu-variant">
-                                <?= esc(!empty($item['nama_varian']) ? $item['nama_varian'] : 'Porsi') ?>
-                            </div>
+                            <div class="menu-name"><?= esc($namaItem) ?></div>
+                            <div class="menu-variant"><?= esc($varianNama) ?></div>
                         </div>
                         <div class="menu-price-qty">
-                            <span class="menu-price">Rp<?= number_format(($item['harga'] ?? 0) * ($item['jumlah'] ?? 1), 0, ',', '.') ?></span>
-                            <span class="menu-qty">x<?= esc($item['jumlah'] ?? 1) ?></span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php elseif (!empty($rows)): ?>
-                <?php foreach ($rows as $r): ?>
-                    <?php 
-                        $namaLower = strtolower($r['produk']['nama'] ?? '');
-                        $img_name = 'menu_1.png';
-                        if (strpos($namaLower, 'lumpia') !== false) {
-                            $img_name = 'menu_2.jpeg';
-                        } elseif (strpos($namaLower, 'siomay') !== false || strpos($namaLower, 'somay') !== false) {
-                            $img_name = 'somay.png';
-                        } elseif (strpos($namaLower, 'tahu') !== false) {
-                            $img_name = 'tahu.png';
-                        }
-                    ?>
-                    <div class="menu-item">
-                        <img src="<?= base_url('assets/img/' . $img_name) ?>" class="menu-img" alt="<?= esc($r['produk']['nama'] ?? 'Menu') ?>" onerror="this.src='https://placehold.co/100x100?text=Menu'">
-                        <div class="menu-details">
-                            <div class="menu-name"><?= esc($r['produk']['nama'] ?? 'Menu') ?></div>
-                            <div class="menu-variant">
-                                <?= esc(!empty($r['varian']['nama_varian']) ? $r['varian']['nama_varian'] : ($r['produk']['satuan'] ?? 'Porsi')) ?>
-                            </div>
-                        </div>
-                        <div class="menu-price-qty">
-                            <span class="menu-price">Rp<?= number_format($r['subtotal'] ?? 0, 0, ',', '.') ?></span>
-                            <span class="menu-qty">x<?= esc($r['jumlah'] ?? 1) ?></span>
+                            <span class="menu-price">Rp<?= number_format((float)$sub, 0, ',', '.') ?></span>
+                            <span class="menu-qty">x<?= esc($qty) ?></span>
                         </div>
                     </div>
                 <?php endforeach; ?>

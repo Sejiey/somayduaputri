@@ -16,6 +16,8 @@ class PembeliModel extends Model
         'email',
         'password_hash',
         'nomor_hp',
+        'reset_token',
+        'reset_token_expires_at',
     ];
 
     protected $validationRules = [

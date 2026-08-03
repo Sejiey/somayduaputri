@@ -38,23 +38,35 @@ class PelangganAdmin extends BaseController
         $thirtyDaysAgo = date('Y-m-d H:i:s', strtotime('-30 days'));
 
         foreach ($pelanggan as &$cust) {
-            // Count total orders & total spending in pesanan & pesanan_acara
-            $antarRow = $this->db->table('pesanan')
-                ->select('COUNT(id) as total_cnt, SUM(total) as sum_total, MAX(created_at) as last_date')
-                ->where('pembeli_id', $cust['id'])
-                ->get()->getRow();
+            $totalPesanan = 0;
+            $totalBelanja = 0;
+            $terakhirOrder = null;
 
-            $acaraRow = $this->db->table('pesanan_acara')
-                ->select('COUNT(id) as total_cnt, SUM(total) as sum_total, MAX(created_at) as last_date')
-                ->where('pembeli_id', $cust['id'])
-                ->get()->getRow();
+            if ($this->db->fieldExists('pembeli_id', 'pesanan')) {
+                $antarRow = $this->db->table('pesanan')
+                    ->select('COUNT(id) as total_cnt, SUM(total) as sum_total, MAX(created_at) as last_date')
+                    ->where('pembeli_id', $cust['id'])
+                    ->get()->getRow();
+                if ($antarRow) {
+                    $totalPesanan += ($antarRow->total_cnt ?? 0);
+                    $totalBelanja += ($antarRow->sum_total ?? 0);
+                    if ($antarRow->last_date) $terakhirOrder = $antarRow->last_date;
+                }
+            }
 
-            $totalPesanan = ($antarRow->total_cnt ?? 0) + ($acaraRow->total_cnt ?? 0);
-            $totalBelanja = ($antarRow->sum_total ?? 0) + ($acaraRow->sum_total ?? 0);
-
-            $lastDateAntar = $antarRow->last_date ?? null;
-            $lastDateAcara = $acaraRow->last_date ?? null;
-            $terakhirOrder = $lastDateAntar > $lastDateAcara ? $lastDateAntar : $lastDateAcara;
+            if ($this->db->fieldExists('pembeli_id', 'pesanan_acara')) {
+                $acaraRow = $this->db->table('pesanan_acara')
+                    ->select('COUNT(id) as total_cnt, SUM(total) as sum_total, MAX(created_at) as last_date')
+                    ->where('pembeli_id', $cust['id'])
+                    ->get()->getRow();
+                if ($acaraRow) {
+                    $totalPesanan += ($acaraRow->total_cnt ?? 0);
+                    $totalBelanja += ($acaraRow->sum_total ?? 0);
+                    if ($acaraRow->last_date && (!$terakhirOrder || $acaraRow->last_date > $terakhirOrder)) {
+                        $terakhirOrder = $acaraRow->last_date;
+                    }
+                }
+            }
 
             $cust['total_pesanan'] = $totalPesanan;
             $cust['total_belanja'] = $totalBelanja;

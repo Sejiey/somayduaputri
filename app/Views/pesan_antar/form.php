@@ -334,14 +334,41 @@
                         <?php 
                         $listMenu = !empty($produkList) ? $produkList : [];
                         foreach ($listMenu as $item): 
-                            $img = 'pentol.jpeg';
-                            $namaLower = strtolower($item['nama'] ?? '');
-                            if (str_contains($namaLower, 'lumpia')) {
-                                $img = 'menu_2.jpeg';
-                            } elseif (str_contains($namaLower, 'siomay') || str_contains($namaLower, 'somay')) {
-                                $img = 'somay.png';
-                            } elseif (str_contains($namaLower, 'tahu')) {
-                                $img = 'tahu.png';
+                            $namaLower = strtolower(trim($item['nama'] ?? ''));
+                            $img = !empty($item['gambar']) ? $item['gambar'] : 'somay.png';
+
+                            if (empty($item['gambar'])) {
+                                if (str_contains($namaLower, 'telur')) {
+                                    $img = 'simay_telur.png';
+                                } elseif (str_contains($namaLower, 'jumbo')) {
+                                    $img = 'siomay_jumbo.jpeg';
+                                } elseif (str_contains($namaLower, 'urat')) {
+                                    $img = 'siomay_urat.jpeg';
+                                } elseif (str_contains($namaLower, 'ikan')) {
+                                    $img = 'somay_ikan.jpeg';
+                                } elseif (str_contains($namaLower, 'batagor')) {
+                                    $img = 'menu_4.png';
+                                } elseif (str_contains($namaLower, 'lumpia')) {
+                                    $img = 'menu_2.jpeg';
+                                } elseif (str_contains($namaLower, 'es jeruk') || str_contains($namaLower, 'jeruk')) {
+                                    $img = 'menu_5.png';
+                                } elseif (str_contains($namaLower, 'mie')) {
+                                    $img = 'menu_3.png';
+                                } elseif (str_contains($namaLower, 'pentol')) {
+                                    $img = 'pentol.jpeg';
+                                } elseif (str_contains($namaLower, 'tahu')) {
+                                    $img = 'tahu.png';
+                                } elseif (str_contains($namaLower, 'nugget')) {
+                                    $img = 'nugget.jpeg';
+                                } elseif (str_contains($namaLower, 'sosis')) {
+                                    $img = 'sosis.jpeg';
+                                } elseif (str_contains($namaLower, 'keju')) {
+                                    $img = 'siomay_keju.jpeg';
+                                } elseif (str_contains($namaLower, 'kukus')) {
+                                    $img = 'somay.png';
+                                } elseif (str_contains($namaLower, 'siomay') || str_contains($namaLower, 'somay')) {
+                                    $img = 'somay.png';
+                                }
                             }
                             $satuan = $item['satuan'] ?? 'pcs';
                         ?>

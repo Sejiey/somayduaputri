@@ -65,6 +65,7 @@ $routes->group('pesan-stand', ['filter' => 'customerAuth'], static function ($ro
     $routes->get('ringkasan',                 'PesanStand::ringkasan');
     $routes->post('simpan',                   'PesanStand::simpanBooking');
     $routes->get('pembayaran/(:segment)',     'PesanStand::pembayaran/$1');
+    $routes->get('cek-status/(:segment)',       'PesanStand::cekStatus/$1');
     $routes->get('berhasil/(:segment)',       'PesanStand::berhasil/$1');
 });
 
@@ -85,12 +86,14 @@ $routes->group('admin', static function ($routes): void {
     $routes->group('pesan-antar', ['filter' => 'auth'], static function ($routes): void {
         $routes->get('/',                            'Admin\PesananAntarAdmin::index');
         $routes->post('update-status/(:num)',        'Admin\PesananAntarAdmin::updateStatus/$1');
+        $routes->post('kirim-maxim/(:num)',           'Admin\PesananAntarAdmin::kirimMaxim/$1');
     });
 
     $routes->group('pesan-acara', ['filter' => 'auth'], static function ($routes): void {
         $routes->get('/',                            'Admin\PesananAcaraAdmin::index');
         $routes->get('detail/(:num)',                'Admin\PesananAcaraAdmin::detail/$1');
         $routes->post('update-status/(:num)',        'Admin\PesananAcaraAdmin::updateStatus/$1');
+        $routes->post('kirim-maxim/(:num)',           'Admin\PesananAcaraAdmin::kirimMaxim/$1');
     });
 
     $routes->group('produk', ['filter' => 'auth'], static function ($routes): void {
@@ -109,6 +112,8 @@ $routes->group('admin', static function ($routes): void {
         $routes->get('/',                            'Admin\LaporanAdmin::index');
         $routes->get('export',                       'Admin\LaporanAdmin::export');
     });
+
+    $routes->get('laporan-keuangan', 'Admin\LaporanAdmin::index', ['filter' => 'auth']);
 
     $routes->group('pelanggan', ['filter' => 'auth'], static function ($routes): void {
         $routes->get('/',                            'Admin\PelangganAdmin::index');

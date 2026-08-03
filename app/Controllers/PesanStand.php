@@ -37,9 +37,15 @@ class PesanStand extends BaseController
         $produkList = $db->table('produk')
             ->where('tampil_di_pesan_stand', 1)
             ->where('status_aktif', 1)
-            ->orderBy('kategori', 'ASC')
-            ->orderBy('nama', 'ASC')
             ->get()->getResultArray();
+
+        // Urutan Katalog Pesan Acara: Lumpia, Siomay Kukus, Tahu Kukus, Siomay Keju, Siomay Isi Telur, Siomay Urat, Siomay Jumbo
+        $customOrder = [19 => 1, 1 => 2, 4 => 3, 7 => 4, 8 => 5, 9 => 6, 10 => 7];
+        usort($produkList, function ($a, $b) use ($customOrder) {
+            $posA = $customOrder[$a['id']] ?? 99;
+            $posB = $customOrder[$b['id']] ?? 99;
+            return $posA <=> $posB;
+        });
 
         foreach ($produkList as &$p) {
             $p['varians'] = $db->table('varian_produk')
@@ -151,7 +157,7 @@ class PesanStand extends BaseController
 
         $orderData = session('pesan_stand_order');
         if (empty($orderData) || empty($orderData['items'])) {
-            return redirect()->to('/pesan-stand/menu')->with('error', 'Silakan pilih menu acara terlebih dahulu.');
+            return redirect()->to('/pesan-stand/menu')->with('error', 'Keranjang pesanan acara kosong. Silakan pilih minimal 1 menu terlebih dahulu.');
         }
 
         $besok = (new \DateTime('tomorrow'))->format('Y-m-d');
@@ -176,7 +182,7 @@ class PesanStand extends BaseController
 
         $orderData = session('pesan_stand_order');
         if (empty($orderData) || empty($orderData['items'])) {
-            return redirect()->to('/pesan-stand/menu')->with('error', 'Silakan pilih menu acara terlebih dahulu.');
+            return redirect()->to('/pesan-stand/menu')->with('error', 'Keranjang pesanan acara kosong. Silakan pilih minimal 1 menu terlebih dahulu.');
         }
 
         $namaPemesan  = trim((string) $this->request->getPost('nama_pemesan'));
@@ -238,7 +244,7 @@ class PesanStand extends BaseController
         $biodataData = session('pesan_stand_biodata');
 
         if (empty($orderData) || empty($orderData['items']) || empty($biodataData)) {
-            return redirect()->to('/pesan-stand/menu')->with('error', 'Silakan lengkapi data pesanan dan pemesan.');
+            return redirect()->to('/pesan-stand/menu')->with('error', 'Keranjang pesanan acara kosong. Silakan pilih minimal 1 menu terlebih dahulu.');
         }
 
         $subtotal = 0.0;
@@ -406,6 +412,46 @@ class PesanStand extends BaseController
         ];
 
         return view('pesan_stand/pembayaran', $data);
+    }
+
+    public function cekStatus(string $kodeBooking)
+    {
+        $pembeliId = (int) session()->get('pembeli_id');
+        if (! $pembeliId) {
+            return $this->response->setStatusCode(401)->setJSON(['ok' => false, 'error' => 'Sesi login berakhir.']);
+        }
+
+        $pesananAcaraModel = new PesananAcaraModel();
+        $booking = $pesananAcaraModel
+            ->where('kode_booking', $kodeBooking)
+            ->where('pembeli_id', $pembeliId)
+            ->first();
+
+        if (! $booking) {
+            return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'error' => 'Pesanan acara tidak ditemukan.']);
+        }
+
+        if ($booking['status_pembayaran'] === 'lunas') {
+            return $this->response->setJSON(['ok' => true, 'data' => ['status' => 'lunas']]);
+        }
+
+        // Cek status ke Midtrans API
+        $check = MidtransService::getStatus($kodeBooking);
+        if ($check['ok'] ?? false) {
+            $trxStatus   = (string) ($check['data']['transaction_status'] ?? '');
+            $fraudStatus = (string) ($check['data']['fraud_status'] ?? '');
+            if (in_array($trxStatus, ['settlement', 'capture'], true) && $fraudStatus !== 'deny') {
+                $pesananAcaraModel->update($booking['id'], ['status_pembayaran' => 'lunas']);
+
+                $db = \Config\Database::connect();
+                $db->table('transaksi')->where('pesanan_acara_id', (int) $booking['id'])->update(['status_pembayaran' => 'lunas']);
+
+                session()->remove(['pesan_stand_order', 'pesan_stand_biodata']);
+                return $this->response->setJSON(['ok' => true, 'data' => ['status' => 'lunas']]);
+            }
+        }
+
+        return $this->response->setJSON(['ok' => true, 'data' => ['status' => $booking['status_pembayaran']]]);
     }
 
     // ====================================================================

@@ -185,8 +185,28 @@
                 <?php endforeach; ?>
             <?php elseif (!empty($rows)): ?>
                 <?php foreach ($rows as $r): ?>
+                    <?php 
+                        $namaLower = strtolower($r['produk']['nama'] ?? '');
+                        $img_name = !empty($r['produk']['gambar']) ? $r['produk']['gambar'] : 'somay.png';
+                        if (empty($r['produk']['gambar'])) {
+                            if (str_contains($namaLower, 'keju')) { $img_name = 'siomay_keju.jpeg'; }
+                            elseif (str_contains($namaLower, 'telur')) { $img_name = 'simay_telur.png'; }
+                            elseif (str_contains($namaLower, 'jumbo')) { $img_name = 'siomay_jumbo.jpeg'; }
+                            elseif (str_contains($namaLower, 'urat')) { $img_name = 'siomay_urat.jpeg'; }
+                            elseif (str_contains($namaLower, 'ikan')) { $img_name = 'somay_ikan.jpeg'; }
+                            elseif (str_contains($namaLower, 'batagor')) { $img_name = 'menu_4.png'; }
+                            elseif (str_contains($namaLower, 'lumpia')) { $img_name = 'menu_2.jpeg'; }
+                            elseif (str_contains($namaLower, 'es jeruk') || str_contains($namaLower, 'jeruk')) { $img_name = 'menu_5.png'; }
+                            elseif (str_contains($namaLower, 'mie')) { $img_name = 'menu_3.png'; }
+                            elseif (str_contains($namaLower, 'pentol')) { $img_name = 'pentol.jpeg'; }
+                            elseif (str_contains($namaLower, 'tahu')) { $img_name = 'tahu.png'; }
+                            elseif (str_contains($namaLower, 'nugget')) { $img_name = 'nugget.jpeg'; }
+                            elseif (str_contains($namaLower, 'sosis')) { $img_name = 'sosis.jpeg'; }
+                            elseif (str_contains($namaLower, 'siomay') || str_contains($namaLower, 'somay')) { $img_name = 'somay.png'; }
+                        }
+                    ?>
                     <div class="menu-item">
-                        <img src="<?= base_url('assets/img/menu_1.png') ?>" class="menu-img" alt="<?= esc($r['produk']['nama'] ?? 'Menu') ?>" onerror="this.src='<?= base_url('img/menu_default.png') ?>'">
+                        <img src="<?= base_url('assets/img/' . $img_name) ?>" class="menu-img" alt="<?= esc($r['produk']['nama'] ?? 'Menu') ?>" onerror="this.src='https://placehold.co/100x100?text=Menu'">
                         <div class="menu-details">
                             <div class="menu-name"><?= esc($r['produk']['nama'] ?? 'Menu') ?></div>
                             <div class="menu-variant"><?= esc(!empty($r['varian']['nama_varian']) ? $r['varian']['nama_varian'] : ($r['produk']['satuan'] ?? 'Porsi')) ?></div>

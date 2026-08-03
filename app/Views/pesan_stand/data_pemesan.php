@@ -227,7 +227,7 @@
                         <span class="material-symbols-outlined" style="font-size: 24px;">arrow_back</span>
                     </a>
                     <div class="page-header-text">
-                        <h2>PESAN STAND ACARA</h2>
+                        <h2>PESAN ACARA</h2>
                         <h1>Langkah 2: Data Pemesan</h1>
                         <p>Lengkapi informasi identitas diri dan jadwal acara Anda.</p>
                     </div>

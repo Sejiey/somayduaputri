@@ -280,7 +280,7 @@
                         <span class="material-symbols-outlined" style="font-size: 24px;">arrow_back</span>
                     </a>
                     <div class="page-header-text">
-                        <h2>PESAN STAND ACARA</h2>
+                        <h2>PESAN ACARA</h2>
                         <h1>Langkah 1: Pilih Menu & Metode</h1>
                         <p>Tentukan pilihan menu porsi besar dan metode pengantaran pesanan acara Anda.</p>
                     </div>
@@ -310,7 +310,7 @@
                             <span class="material-symbols-outlined method-icon" id="iconAmbil">storefront</span>
                             <div class="method-text">
                                 <strong>Ambil Sendiri</strong>
-                                <span class="desc">Ambil di Kantin RSUD Undata</span>
+                                <span class="desc">Jl. Rindai Permai Blok M No.30 (<a href="https://maps.app.goo.gl/dhxQZUKMSHdAQnNq7" target="_blank" onclick="event.stopPropagation()" style="color: var(--primary); text-decoration: underline; font-weight: 600;">Lihat Maps</a>)</span>
                             </div>
                         </label>
                     </div>
@@ -328,23 +328,54 @@
                                 $savedVarianId = $savedItem['varian_id'] ?? null;
                                 
                                 // Penentuan Gambar Otomatis
-                                $namaLower = strtolower($p['nama'] ?? '');
-                                $img_name = 'menu_1.png';
-                                if (strpos($namaLower, 'lumpia') !== false) {
-                                    $img_name = 'menu_2.jpeg';
-                                } elseif (strpos($namaLower, 'siomay') !== false || strpos($namaLower, 'somay') !== false) {
-                                    $img_name = 'somay.png';
-                                } elseif (strpos($namaLower, 'tahu') !== false) {
-                                    $img_name = 'tahu.png';
+                                $namaLower = strtolower(trim($p['nama'] ?? ''));
+                                $img_name = !empty($p['gambar']) ? $p['gambar'] : 'somay.png';
+
+                                if (empty($p['gambar'])) {
+                                    if (str_contains($namaLower, 'keju')) {
+                                        $img_name = 'siomay_keju.jpeg';
+                                    } elseif (str_contains($namaLower, 'telur')) {
+                                        $img_name = 'simay_telur.png';
+                                    } elseif (str_contains($namaLower, 'jumbo')) {
+                                        $img_name = 'siomay_jumbo.jpeg';
+                                    } elseif (str_contains($namaLower, 'urat')) {
+                                        $img_name = 'siomay_urat.jpeg';
+                                    } elseif (str_contains($namaLower, 'ikan')) {
+                                        $img_name = 'somay_ikan.jpeg';
+                                    } elseif (str_contains($namaLower, 'batagor')) {
+                                        $img_name = 'menu_4.png';
+                                    } elseif (str_contains($namaLower, 'lumpia')) {
+                                        $img_name = 'menu_2.jpeg';
+                                    } elseif (str_contains($namaLower, 'es jeruk') || str_contains($namaLower, 'jeruk')) {
+                                        $img_name = 'menu_5.png';
+                                    } elseif (str_contains($namaLower, 'mie')) {
+                                        $img_name = 'menu_3.png';
+                                    } elseif (str_contains($namaLower, 'pentol')) {
+                                        $img_name = 'pentol.jpeg';
+                                    } elseif (str_contains($namaLower, 'tahu')) {
+                                        $img_name = 'tahu.png';
+                                    } elseif (str_contains($namaLower, 'nugget')) {
+                                        $img_name = 'nugget.jpeg';
+                                    } elseif (str_contains($namaLower, 'sosis')) {
+                                        $img_name = 'sosis.jpeg';
+                                    } elseif (str_contains($namaLower, 'siomay') || str_contains($namaLower, 'somay')) {
+                                        $img_name = 'somay.png';
+                                    }
                                 }
                             ?>
                             <div class="menu-card">
                                 <img src="<?= base_url('assets/img/' . $img_name) ?>" alt="<?= esc($p['nama']) ?>" class="menu-img" onerror="this.src='https://placehold.co/200x140?text=<?= urlencode($p['nama']) ?>'">
                                 <h3><?= esc($p['nama']) ?></h3>
                                 
-                                <?php if (!empty($p['varians'])): ?>
+                                <?php if (!empty($p['varians'])): 
+                                    $unitLabel = 'Pilih pcs';
+                                    if (str_contains($namaLower, 'kukus') || str_contains($namaLower, 'tahu')) {
+                                        $unitLabel = 'Pilih kg';
+                                    }
+                                ?>
                                     <!-- Menampilkan Dropdown Jika Ada Varian -->
                                     <select name="items[<?= $pId ?>][varian_id]" class="menu-select" onchange="updateHarga(this, 'price_<?= $pId ?>', 'qty_<?= $pId ?>')" autocomplete="off">
+                                        <option value="" disabled <?= empty($savedVarianId) ? 'selected' : '' ?>><?= $unitLabel ?></option>
                                         <?php foreach ($p['varians'] as $v): ?>
                                             <option value="<?= (int) $v['id'] ?>" data-harga="<?= (float)$v['harga'] ?>" <?= $savedVarianId == $v['id'] ? 'selected' : '' ?>>
                                                 <?= esc($v['nama_varian']) ?> — Rp<?= number_format((float)$v['harga'], 0, ',', '.') ?>

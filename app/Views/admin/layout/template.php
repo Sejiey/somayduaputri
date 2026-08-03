@@ -421,7 +421,7 @@
                         Pesan Acara
                     </a>
                 </li>
-                <li class="nav-item <?= $uri === 'laporan' ? 'active' : '' ?>">
+                <li class="nav-item <?= ($uri === 'laporan' || $uri === 'laporan-keuangan') ? 'active' : '' ?>">
                     <a href="<?= base_url('admin/laporan') ?>">
                         <span class="material-symbols-outlined">analytics</span>
                         Laporan Keuangan
