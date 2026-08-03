@@ -37,6 +37,8 @@ class PelangganAdmin extends BaseController
         $repeatOrderCount = 0;
         $thirtyDaysAgo = date('Y-m-d H:i:s', strtotime('-30 days'));
 
+        $excludeStatus = ['menunggu_pembayaran', 'dibatalkan', 'gagal', 'kedaluwarsa'];
+
         foreach ($pelanggan as &$cust) {
             $totalPesanan = 0;
             $totalBelanja = 0;
@@ -46,6 +48,7 @@ class PelangganAdmin extends BaseController
                 $antarRow = $this->db->table('pesanan')
                     ->select('COUNT(id) as total_cnt, SUM(total) as sum_total, MAX(created_at) as last_date')
                     ->where('pembeli_id', $cust['id'])
+                    ->whereNotIn('status', $excludeStatus)
                     ->get()->getRow();
                 if ($antarRow) {
                     $totalPesanan += ($antarRow->total_cnt ?? 0);
@@ -58,6 +61,7 @@ class PelangganAdmin extends BaseController
                 $acaraRow = $this->db->table('pesanan_acara')
                     ->select('COUNT(id) as total_cnt, SUM(total) as sum_total, MAX(created_at) as last_date')
                     ->where('pembeli_id', $cust['id'])
+                    ->whereNotIn('status_pembayaran', $excludeStatus)
                     ->get()->getRow();
                 if ($acaraRow) {
                     $totalPesanan += ($acaraRow->total_cnt ?? 0);

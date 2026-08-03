@@ -17,7 +17,8 @@ class PesananAcaraAdmin extends BaseController
     public function index()
     {
         $tab = $this->request->getGet('tab') ?? 'semua';
-        $builder = $this->db->table('pesanan_acara')->where('status_pembayaran !=', 'pending');
+        $excludeStatus = ['menunggu_pembayaran', 'dibatalkan', 'gagal', 'kedaluwarsa'];
+        $builder = $this->db->table('pesanan_acara')->whereNotIn('status_pembayaran', $excludeStatus);
 
         if ($tab === 'ambil_sendiri') {
             $builder->where('metode_pengambilan', 'ambil_sendiri');
@@ -50,9 +51,9 @@ class PesananAcaraAdmin extends BaseController
         }
 
         // Tab counts (only paid/valid orders)
-        $countSemua = $this->db->table('pesanan_acara')->where('status_pembayaran !=', 'pending')->countAllResults();
-        $countAmbil = $this->db->table('pesanan_acara')->where('status_pembayaran !=', 'pending')->where('metode_pengambilan', 'ambil_sendiri')->countAllResults();
-        $countMaxim = $this->db->table('pesanan_acara')->where('status_pembayaran !=', 'pending')->where('metode_pengambilan', 'diantar')->countAllResults();
+        $countSemua = $this->db->table('pesanan_acara')->whereNotIn('status_pembayaran', $excludeStatus)->countAllResults();
+        $countAmbil = $this->db->table('pesanan_acara')->whereNotIn('status_pembayaran', $excludeStatus)->where('metode_pengambilan', 'ambil_sendiri')->countAllResults();
+        $countMaxim = $this->db->table('pesanan_acara')->whereNotIn('status_pembayaran', $excludeStatus)->where('metode_pengambilan', 'diantar')->countAllResults();
 
         $data = [
             'title'        => 'Kelola Pesan Acara — Siomay Dua Putri',

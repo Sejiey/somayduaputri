@@ -311,6 +311,10 @@
         <!-- Form Login -->
         <form method="post" action="<?= base_url('login') ?>" id="loginForm" autocomplete="off" novalidate>
             <?= csrf_field() ?>
+
+            <!-- Dummy inputs to catch Chrome aggressive autofill on page load -->
+            <input style="display:none" type="text" name="fakeusernameremembered"/>
+            <input style="display:none" type="password" name="fakepasswordremembered"/>
             
             <!-- Hidden Redirect -->
             <?php if (!empty($redirect)): ?>
@@ -374,7 +378,18 @@
             }
         }
 
+        function clearFormInputs() {
+            const emailInput = document.getElementById('email');
+            const passInput = document.getElementById('password');
+            if (emailInput) emailInput.value = '';
+            if (passInput) passInput.value = '';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            clearFormInputs();
+            setTimeout(clearFormInputs, 50);
+            setTimeout(clearFormInputs, 200);
+
             const form = document.getElementById('loginForm');
             const emailInput = document.getElementById('email');
             const passInput = document.getElementById('password');
@@ -417,14 +432,12 @@
                         if (jsAlertBox) jsAlertBox.style.display = 'flex';
                         return false;
                     }
-            // Pastikan kolom selalu bersih/kosong saat dibuka
-            if (emailInput) emailInput.value = '';
-            if (passInput) passInput.value = '';
-            window.addEventListener('pageshow', function() {
-                if (emailInput) emailInput.value = '';
-                if (passInput) passInput.value = '';
-            });
+                });
+            }
         });
+
+        window.addEventListener('pageshow', clearFormInputs);
+        window.addEventListener('load', clearFormInputs);
     </script>
 </body>
 </html>

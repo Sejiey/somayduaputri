@@ -20,17 +20,19 @@ class LaporanAdmin extends BaseController
         $sampai = $this->request->getGet('sampai') ?? date('Y-m-d');
         $tab    = $this->request->getGet('tab') ?? 'semua';
 
+        $excludeStatus = ['menunggu_pembayaran', 'dibatalkan', 'gagal', 'kedaluwarsa'];
+
         // 1. Total Metrics
         $revAntarRow = $this->db->table('pesanan')
             ->selectSum('total')
-            ->whereNotIn('status', ['pending', 'batal', 'gagal'])
+            ->whereNotIn('status', $excludeStatus)
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->get()->getRow();
 
         $revAcaraRow = $this->db->table('pesanan_acara')
             ->selectSum('total')
-            ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
+            ->whereNotIn('status_pembayaran', $excludeStatus)
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->get()->getRow();
@@ -52,13 +54,13 @@ class LaporanAdmin extends BaseController
         $labaBersih = $totalPendapatan - $pengeluaranTotal;
 
         $countAntar = $this->db->table('pesanan')
-            ->whereNotIn('status', ['pending', 'batal', 'gagal'])
+            ->whereNotIn('status', $excludeStatus)
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->countAllResults();
 
         $countAcara = $this->db->table('pesanan_acara')
-            ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
+            ->whereNotIn('status_pembayaran', $excludeStatus)
             ->where('DATE(created_at) >=', $dari)
             ->where('DATE(created_at) <=', $sampai)
             ->countAllResults();
@@ -74,13 +76,13 @@ class LaporanAdmin extends BaseController
 
             $sum1 = $this->db->table('pesanan')
                 ->selectSum('total')
-                ->whereNotIn('status', ['pending', 'batal', 'gagal'])
+                ->whereNotIn('status', $excludeStatus)
                 ->where('DATE(created_at)', $d)
                 ->get()->getRow()->total ?? 0;
 
             $sum2 = $this->db->table('pesanan_acara')
                 ->selectSum('total')
-                ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
+                ->whereNotIn('status_pembayaran', $excludeStatus)
                 ->where('DATE(created_at)', $d)
                 ->get()->getRow()->total ?? 0;
 
@@ -98,23 +100,23 @@ class LaporanAdmin extends BaseController
 
                 $rev1 = $this->db->table('pesanan')
                     ->selectSum('total')
-                    ->whereNotIn('status', ['pending', 'batal', 'gagal'])
+                    ->whereNotIn('status', $excludeStatus)
                     ->where('DATE(created_at)', $d)
                     ->get()->getRow()->total ?? 0;
 
                 $cnt1 = $this->db->table('pesanan')
-                    ->whereNotIn('status', ['pending', 'batal', 'gagal'])
+                    ->whereNotIn('status', $excludeStatus)
                     ->where('DATE(created_at)', $d)
                     ->countAllResults();
 
                 $rev2 = $this->db->table('pesanan_acara')
                     ->selectSum('total')
-                    ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
+                    ->whereNotIn('status_pembayaran', $excludeStatus)
                     ->where('DATE(created_at)', $d)
                     ->get()->getRow()->total ?? 0;
 
                 $cnt2 = $this->db->table('pesanan_acara')
-                    ->whereNotIn('status_pembayaran', ['pending', 'batal', 'gagal'])
+                    ->whereNotIn('status_pembayaran', $excludeStatus)
                     ->where('DATE(created_at)', $d)
                     ->countAllResults();
 

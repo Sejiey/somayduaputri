@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= esc($title ?? 'Admin — Siomay Dua Putri') ?></title>
     
-    <!-- Google Fonts: Plus Jakarta Sans for ultra-clean legibility -->
+    <!-- Google Fonts: Plus Jakarta Sans & Playfair Display for exact landing page brand font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
     
     <!-- Chart.js -->
@@ -68,16 +68,21 @@
         }
 
         .brand-logo .title {
-            font-size: 1.2rem;
-            font-weight: 800;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.35rem;
+            font-weight: 900;
             color: var(--primary);
-            line-height: 1.2;
-            letter-spacing: -0.3px;
+            line-height: 1.05;
+            letter-spacing: -0.5px;
         }
 
         .brand-logo .title span {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 900;
             color: var(--accent-red);
             display: block;
+            margin-top: 2px;
         }
 
         .nav-list {
@@ -396,7 +401,7 @@
             <?php 
                 $uri = service('uri')->getSegment(2) ?? 'dashboard';
                 $db = \Config\Database::connect();
-                $newAntar = $db->table('pesanan')->where('status', 'pending')->countAllResults();
+                $newAntar = $db->table('pesanan')->whereIn('status', ['lunas', 'diproses'])->countAllResults();
             ?>
 
             <ul class="nav-list">
@@ -437,12 +442,6 @@
                     <a href="<?= base_url('admin/pelanggan') ?>">
                         <span class="material-symbols-outlined">group</span>
                         Pelanggan
-                    </a>
-                </li>
-                <li class="nav-item <?= $uri === 'pengaturan' ? 'active' : '' ?>">
-                    <a href="<?= base_url('admin/pengaturan') ?>">
-                        <span class="material-symbols-outlined">settings</span>
-                        Pengaturan
                     </a>
                 </li>
                 <li class="nav-item">

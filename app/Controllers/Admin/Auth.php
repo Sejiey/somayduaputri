@@ -93,7 +93,7 @@ class Auth extends BaseController
             setcookie(self::REMEMBER_COOKIE, '', time() - 3600, '/');
             unset($_COOKIE[self::REMEMBER_COOKIE]);
         }
-        return redirect()->to('/admin/login')->with('message', 'Anda sudah logout.');
+        return redirect()->to(base_url('/'))->with('message', 'Anda telah logout dari Admin.');
     }
 
     public function register()

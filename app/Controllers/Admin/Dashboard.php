@@ -18,10 +18,12 @@ class Dashboard extends BaseController
     {
         $today = date('Y-m-d');
 
+        $excludeStatus = ['menunggu_pembayaran', 'dibatalkan', 'gagal', 'kedaluwarsa'];
+
         // 1. Stat Cards Data (Pesanan yang sudah lunas/berhasil)
         $antarTodayCount = $this->db->table('pesanan')
             ->where('DATE(created_at)', $today)
-            ->where('status !=', 'pending')
+            ->whereNotIn('status', $excludeStatus)
             ->countAllResults();
 
         $antarBaruCount = $this->db->table('pesanan')
@@ -31,11 +33,11 @@ class Dashboard extends BaseController
 
         // Pesan Acara (Aktif & Akan Datang)
         $acaraAktifCount = $this->db->table('pesanan_acara')
-            ->where('status_pembayaran !=', 'pending')
+            ->whereNotIn('status_pembayaran', $excludeStatus)
             ->countAllResults();
 
         $acaraAkanDatangCount = $this->db->table('pesanan_acara')
-            ->where('status_pembayaran !=', 'pending')
+            ->whereNotIn('status_pembayaran', $excludeStatus)
             ->where('tanggal_acara >=', $today)
             ->countAllResults();
 
@@ -43,31 +45,31 @@ class Dashboard extends BaseController
         $revAntarRow = $this->db->table('pesanan')
             ->selectSum('total')
             ->where('DATE(created_at)', $today)
-            ->where('status !=', 'pending')
+            ->whereNotIn('status', $excludeStatus)
             ->get()->getRow();
 
         $revAcaraRow = $this->db->table('pesanan_acara')
             ->selectSum('total')
             ->where('DATE(created_at)', $today)
-            ->where('status_pembayaran !=', 'pending')
+            ->whereNotIn('status_pembayaran', $excludeStatus)
             ->get()->getRow();
 
         $pendapatanToday = ($revAntarRow->total ?? 0) + ($revAcaraRow->total ?? 0);
 
         // Total Pesanan Semua Waktu
-        $totalAntar = $this->db->table('pesanan')->where('status !=', 'pending')->countAllResults();
-        $totalAcara = $this->db->table('pesanan_acara')->where('status_pembayaran !=', 'pending')->countAllResults();
+        $totalAntar = $this->db->table('pesanan')->whereNotIn('status', $excludeStatus)->countAllResults();
+        $totalAcara = $this->db->table('pesanan_acara')->whereNotIn('status_pembayaran', $excludeStatus)->countAllResults();
         $totalPesananAll = $totalAntar + $totalAcara;
 
-        // 2. Lists Recent Orders (Hanya yang sudah berhasil dibayar / tidak pending)
+        // 2. Lists Recent Orders (Hanya yang sudah berhasil dibayar)
         $recentAntar = $this->db->table('pesanan')
-            ->where('status !=', 'pending')
+            ->whereNotIn('status', $excludeStatus)
             ->orderBy('id', 'DESC')
             ->limit(5)
             ->get()->getResultArray();
 
         $recentAcara = $this->db->table('pesanan_acara')
-            ->where('status_pembayaran !=', 'pending')
+            ->whereNotIn('status_pembayaran', $excludeStatus)
             ->orderBy('id', 'DESC')
             ->limit(5)
             ->get()->getResultArray();
@@ -76,13 +78,13 @@ class Dashboard extends BaseController
         $monthStart = date('Y-m-01');
         $revAntarMonth = $this->db->table('pesanan')
             ->selectSum('total')
-            ->where('status !=', 'pending')
+            ->whereNotIn('status', $excludeStatus)
             ->where('created_at >=', $monthStart)
             ->get()->getRow()->total ?? 0;
 
         $revAcaraMonth = $this->db->table('pesanan_acara')
             ->selectSum('total')
-            ->where('status_pembayaran !=', 'pending')
+            ->whereNotIn('status_pembayaran', $excludeStatus)
             ->where('created_at >=', $monthStart)
             ->get()->getRow()->total ?? 0;
 

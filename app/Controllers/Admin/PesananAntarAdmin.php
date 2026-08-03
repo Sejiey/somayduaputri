@@ -17,7 +17,8 @@ class PesananAntarAdmin extends BaseController
     public function index()
     {
         $tab = $this->request->getGet('tab') ?? 'semua';
-        $builder = $this->db->table('pesanan')->where('status !=', 'pending');
+        $excludeStatus = ['menunggu_pembayaran', 'dibatalkan', 'gagal', 'kedaluwarsa'];
+        $builder = $this->db->table('pesanan')->whereNotIn('status', $excludeStatus);
 
         if ($tab === 'ambil_sendiri') {
             $builder->where('metode', 'ambil_sendiri');
@@ -52,10 +53,10 @@ class PesananAntarAdmin extends BaseController
         }
 
         // Tab counts (only paid/valid orders)
-        $countSemua = $this->db->table('pesanan')->where('status !=', 'pending')->countAllResults();
-        $countAmbil = $this->db->table('pesanan')->where('status !=', 'pending')->where('metode', 'ambil_sendiri')->countAllResults();
-        $countUndata = $this->db->table('pesanan')->where('status !=', 'pending')->where('metode', 'diantar')->where('lokasi', 'Undata')->countAllResults();
-        $countMaxim = $this->db->table('pesanan')->where('status !=', 'pending')->where('metode', 'diantar')->where('lokasi !=', 'Undata')->countAllResults();
+        $countSemua = $this->db->table('pesanan')->whereNotIn('status', $excludeStatus)->countAllResults();
+        $countAmbil = $this->db->table('pesanan')->whereNotIn('status', $excludeStatus)->where('metode', 'ambil_sendiri')->countAllResults();
+        $countUndata = $this->db->table('pesanan')->whereNotIn('status', $excludeStatus)->where('metode', 'diantar')->where('lokasi', 'Undata')->countAllResults();
+        $countMaxim = $this->db->table('pesanan')->whereNotIn('status', $excludeStatus)->where('metode', 'diantar')->where('lokasi !=', 'Undata')->countAllResults();
 
         $data = [
             'title'        => 'Kelola Pesan Antar — Siomay Dua Putri',
@@ -91,10 +92,12 @@ class PesananAntarAdmin extends BaseController
 
         $maximRef = 'MAX-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 6));
 
-        $this->db->table('pesanan')->where('id', $id)->update([
-            'status' => 'diantar',
-            'catatan_kurir' => 'Terhubung ke API Maxim (Order Ref: ' . $maximRef . ')'
-        ]);
+        $updateData = ['status' => 'diantar'];
+        if ($this->db->fieldExists('catatan_kurir', 'pesanan')) {
+            $updateData['catatan_kurir'] = 'Terhubung ke API Maxim (Order Ref: ' . $maximRef . ')';
+        }
+
+        $this->db->table('pesanan')->where('id', $id)->update($updateData);
 
         return redirect()->back()->with('success', 'Berhasil terhubung ke API Maxim! Order Reference: ' . $maximRef . '. Driver Maxim akan segera menjemput.');
     }

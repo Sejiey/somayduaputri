@@ -120,8 +120,5 @@ $routes->group('admin', static function ($routes): void {
         $routes->get('export',                       'Admin\PelangganAdmin::export');
     });
 
-    $routes->group('pengaturan', ['filter' => 'auth'], static function ($routes): void {
-        $routes->get('/',                            'Admin\Pengaturan::index');
-        $routes->post('save',                        'Admin\Pengaturan::save');
-    });
+    $routes->addRedirect('pengaturan', 'admin/dashboard');
 });

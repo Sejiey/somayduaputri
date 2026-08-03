@@ -30,11 +30,7 @@
                 </p>
                 
                 <div class="hero-buttons">
-                    <button class="btn-hero outline">
-                        <div class="icon-wrap"><span class="material-symbols-outlined">qr_code_2</span></div>
-                        <span class="text-btn">TAMPILKAN<br><strong>QRIS</strong></span>
-                    </button>
-                    <a href="<?= base_url('pesan-antar') ?>" class="btn-hero solid">
+                    <a href="<?= base_url('pesan-antar') ?>" class="btn-hero outline">
                         <div class="icon-wrap"><span class="material-symbols-outlined">moped</span></div>
                         <span class="text-btn">PESAN ANTAR<br><strong>Hari Ini</strong></span>
                     </a>
@@ -88,13 +84,6 @@
                         </div>
                         <h4>Menerima Porsi Besar</h4>
                         <p>Melayani pesanan dalam jumlah banyak untuk berbagai acara Anda. Pembayaran praktis, opsi pengiriman via Maxim atau ambil sendiri.</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon-wrapper">
-                            <span class="material-symbols-outlined">qr_code_2</span>
-                        </div>
-                        <h4>Pembayaran QRIS</h4>
-                        <p>Bayar mudah & cepat menggunakan QRIS. Tanpa uang tunai.</p>
                     </div>
                 </div>
             </div>
@@ -161,15 +150,6 @@
         <div class="container position-relative">
             <h2 class="section-title">Layanan Kami</h2>
             <div class="services-grid">
-                
-                <div class="service-card">
-                    <img src="<?= base_url('assets/img/qris.jpeg') ?>" alt="QRIS" class="service-img qris-img">
-                    <div class="service-info">
-                        <h3>Tampilkan QRIS</h3>
-                        <p>Makan di tempat lebih praktis. Cukup masukkan total nominal belanja Anda untuk memunculkan QRIS otomatis.</p>
-                        <a href="<?= base_url('qris') ?>" class="btn-service">Lihat QRIS</a>
-                    </div>
-                </div>
 
                 <div class="service-card">
                     <img src="<?= base_url('assets/img/maxim.png') ?>" alt="Maxim Delivery" class="service-img maxim-img">
@@ -316,7 +296,7 @@
     /* 2. KENAPA MEMILIH KAMI (STATIS & PUTIH) */
     .features-section { padding: 60px 0 80px; background-color: var(--c-white); }
     .features-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }
-    .features-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .features-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .feature-card { background: var(--c-white); border: 1px solid rgba(59, 25, 143, 0.1); padding: 24px 16px; border-radius: 12px; text-align: center; }
     .feature-icon-wrapper { width: 55px; height: 55px; margin: 0 auto 15px; border-radius: 50%; border: 2px solid var(--c-primary); display: flex; align-items: center; justify-content: center; position: relative; }
     .feature-icon-wrapper::after { content: ''; position: absolute; width: 40px; height: 40px; background-color: var(--c-primary); border-radius: 50%; z-index: 0; }
@@ -384,7 +364,7 @@
         background-size: cover; background-repeat: no-repeat; background-position: center;
     }
 
-    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .services-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; max-width: 960px; margin: 0 auto; }
     .service-card { background: var(--c-white); border-radius: 12px; padding: 24px; display: flex; gap: 16px; box-shadow: var(--shadow-light); align-items: center; border: 1px solid rgba(255, 255, 255, 0.4); }
     .service-img { width: 100px; height: 100px; object-fit: contain; flex-shrink: 0; border-radius: 8px; }
     .qris-img { border: 1px solid #eee; }
